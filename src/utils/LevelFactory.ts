@@ -206,6 +206,35 @@ const connectionMatches = {
         }
 
         return dirMatchFound;
+    },
+    validateConnectionOptions(dirList: Array<string>) {
+        const staticDirections = ["N", "E", "S", "W"];
+
+        const validConnectors: Array<Array<string>> = [];
+
+        for (const style in TileStyle){
+            if (isNaN(Number(style))) continue;
+            const styleMatch = connectionTable[style as unknown as TileStyle];
+            for (const direct in TileDir){
+                if (isNaN(Number(direct))) continue;
+                const dirStyleMatch = styleMatch[direct as unknown as TileDir];
+
+                let matchCountCollector = 0;
+                for (const staticDir of staticDirections){
+                    const checkInverse = !dirList.includes(staticDir);
+
+                    const hasMatch = (checkInverse)
+                    ? ![...dirStyleMatch.map(arr => arr[0])].includes(staticDir)
+                    : [...dirStyleMatch.map(arr => arr[0])].includes(staticDir);
+
+                    matchCountCollector += +hasMatch;
+                }
+
+                if (matchCountCollector === 4) validConnectors.push([style, direct]);
+            }
+        }
+
+        return validConnectors;
     }
 };
 
@@ -323,64 +352,122 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
 
                 // Cell is not collapsed, perform magic math
                 // let optionCollector = connectionMatches.grabAllOptions();
-                let optionCollector: Array<Array<string>> = [];
+                //let optionCollector: Array<Array<string>> = [];
 
-                // Check Above
+                // Collecting valid direction connection points, direction will not be present
+                // if invalid/no connection exists
+                const directionCollector: Array<string> = [];
+
+                // =================
+                //    Check Above
+                // =================
                 if (j > 0){
                     //console.log('== LOOKING UP ==');
 
                     let above = cells[i + (j - 1) * DIM];
-                    if (connectionMatches.checkForDirFromOptions("S", above.options)){
-                        optionCollector = optionCollector.concat(connectionMatches.checkAbove("N"));
-                    } else optionCollector = optionCollector.concat(connectionMatches.checkAbove(undefined));
-                }
+                    console.log(
+                        'Tile Above (ID: %d) has "S" connection: ', 
+                        above.id,
+                        connectionMatches.checkForDirFromOptions("S", above.options)
+                    );
 
-                // Check Right
+                    if (connectionMatches.checkForDirFromOptions("S", above.options)) 
+                        directionCollector.push("N");
+
+                    // if (connectionMatches.checkForDirFromOptions("S", above.options)){
+                    //     optionCollector = optionCollector.concat(connectionMatches.checkAbove("N"));
+                    // } else optionCollector = optionCollector.concat(connectionMatches.checkAbove(undefined));
+                } // else optionCollector = optionCollector.concat(connectionMatches.checkAbove(undefined));
+
+                // =================
+                //    Check Right
+                // =================
                 if (i < DIM - 1){
                     //console.log('== LOOKING RIGHT ==');
 
                     let right = cells[i + 1 + j * DIM];
-                    if (connectionMatches.checkForDirFromOptions("W", right.options)){
-                        optionCollector = optionCollector.concat(connectionMatches.checkRight("E"));
-                    } else optionCollector = optionCollector.concat(connectionMatches.checkRight(undefined));
-                }
+                    console.log(
+                        'Tile Right (ID: %d) has "W" connection: ', 
+                        right.id,
+                        connectionMatches.checkForDirFromOptions("W", right.options)
+                    );
 
-                // Check Below
+                    if (connectionMatches.checkForDirFromOptions("W", right.options))
+                        directionCollector.push("E");
+
+                    // if (connectionMatches.checkForDirFromOptions("W", right.options)){
+                    //     optionCollector = optionCollector.concat(connectionMatches.checkRight("E"));
+                    // } else optionCollector = optionCollector.concat(connectionMatches.checkRight(undefined));
+                } //else optionCollector = optionCollector.concat(connectionMatches.checkRight(undefined));
+
+                // =================
+                //    Check Below
+                // =================
                 if (j < DIM - 1){
                     //console.log('== LOOKING DOWN ==');
 
                     let below = cells[i + (j + 1) * DIM];
-                    if (connectionMatches.checkForDirFromOptions("N", below.options)){
-                        optionCollector = optionCollector.concat(connectionMatches.checkBelow("S"));
-                    } else optionCollector = optionCollector.concat(connectionMatches.checkBelow(undefined));
-                }
+                    console.log(
+                        'Tile Below (ID: %d) has "N" connection: ', 
+                        below.id,
+                        connectionMatches.checkForDirFromOptions("N", below.options)
+                    );
 
-                // Check Left
+                    if (connectionMatches.checkForDirFromOptions("N", below.options))
+                        directionCollector.push("S");
+
+                    // if (connectionMatches.checkForDirFromOptions("N", below.options)){
+                    //     optionCollector = optionCollector.concat(connectionMatches.checkBelow("S"));
+                    // } else optionCollector = optionCollector.concat(connectionMatches.checkBelow(undefined));
+                } //else optionCollector = optionCollector.concat(connectionMatches.checkBelow(undefined));
+
+                // =================
+                //     Check Left
+                // =================
                 if (i > 0){
                     //console.log('== LOOKING LEFT ==');
 
                     let left = cells[i - 1 + j * DIM];
-                    if (connectionMatches.checkForDirFromOptions("E", left.options)){
-                        optionCollector = optionCollector.concat(connectionMatches.checkLeft("W"));
-                    } else optionCollector = optionCollector.concat(connectionMatches.checkLeft(undefined));
-                }
+                    console.log(
+                        'Tile Left (ID: %d) has "E" connection: ', 
+                        left.id,
+                        connectionMatches.checkForDirFromOptions("E", left.options)
+                    );
+
+                    if (connectionMatches.checkForDirFromOptions("E", left.options))
+                        directionCollector.push("W");
+
+                    // if (connectionMatches.checkForDirFromOptions("E", left.options)){
+                    //     optionCollector = optionCollector.concat(connectionMatches.checkLeft("W"));
+                    // } else optionCollector = optionCollector.concat(connectionMatches.checkLeft(undefined));
+                } //else optionCollector = optionCollector.concat(connectionMatches.checkLeft(undefined));
+
+                const finalOptions: Array<Array<string>> = [];
+
+                // LOGIC UPDATE NEEDED
+                // Compile a list of connection matches, using that array to filter for valid
+                // options when repopulating cell options
+
+                finalOptions.push(...connectionMatches.validateConnectionOptions(directionCollector));
 
                 // Filter out all duped values
 
-                const finalOptions: Array<Array<string>> = [];
-                for (const option of optionCollector){
-                    if (finalOptions.length === 0) {finalOptions.push(option); continue;}
+                // for (const option of optionCollector){
+                //     if (finalOptions.length === 0) {
+                //         finalOptions.push(option); 
+                //         continue;
+                //     }
                     
-                    let skipAdd = false;
+                //     let skipAdd = false;
 
-                    const [s1, d1] = option;
-                    for (const addedOption of finalOptions){
-                        const [s2, d2] = addedOption;
-                        if (s1 === s2 && d1 === d2) skipAdd = true;
-                    }
+                //     const [s1, d1] = option;
+                //     for (const addedOption of finalOptions){
+                //         const [s2, d2] = addedOption;
+                //         if (s1 === s2 && d1 === d2) skipAdd = true;
+                //     }
                     
-                    if (!skipAdd) finalOptions.push(option);
-                }
+                //     if (!skipAdd) finalOptions.push(option);
+                // }
 
                 // console.table(finalOptions);
 

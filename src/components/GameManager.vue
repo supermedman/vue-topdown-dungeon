@@ -36,7 +36,7 @@ export default defineComponent({
             if (!this.levelLoaded) this.levelLoaded = true;
             else return;
 
-            console.log('Map Tiles Loaded: %d', this.mapController.populateBase(createLevel({ dim: 4 })));
+            console.log('Map Tiles Loaded: %d', this.mapController.populateBase(createLevel({ dim: 4 }))); // createLevel({ dim: 4 })
             // this.mapController.debugTiles();
             // this.mapController.debugCells();
             console.log('Map Cells Loaded: %d', this.mapController.populateCells());

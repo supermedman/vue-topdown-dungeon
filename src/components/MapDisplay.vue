@@ -128,10 +128,16 @@ export default {
                     // Used for scaling connection squares to 1/4 the size of a map cell
                     const cH = h / 4;
                     const cW = w / 4;
-                    for (const conDir of cell.connections){
-                        const [dir] = conDir; // , id
-                        ctx.fillStyle = 'lightgreen';
-                        switch(dir){
+
+                    const staticDirList = ["N", "E", "S", "W"];
+                    const connectedCellData = cell.connections.map(([dir,]) => dir);
+
+                    for (const statDir of staticDirList){
+                        ctx.fillStyle = (!connectedCellData.includes(statDir))
+                        ? 'red'
+                        : 'lightgreen';
+                        
+                        switch(statDir){
                             case "N":
                                 ctx.fillRect(cW * 1.5 + (i * w), j * h, cW, cH);
                             break;
@@ -146,6 +152,25 @@ export default {
                             break;
                         }
                     }
+
+                    // for (const conDir of cell.connections){
+                    //     const [dir] = conDir; // , id
+                    //     ctx.fillStyle = 'lightgreen';
+                    //     switch(dir){
+                    //         case "N":
+                    //             ctx.fillRect(cW * 1.5 + (i * w), j * h, cW, cH);
+                    //         break;
+                    //         case "E":
+                    //             ctx.fillRect(cW * 3 + (i * w), cH * 1.5 + (j * h), cW, cH);
+                    //         break;
+                    //         case "S":
+                    //             ctx.fillRect(cW * 1.5 + (i * w), cH * 3 + (j * h), cW, cH);
+                    //         break;
+                    //         case "W":
+                    //             ctx.fillRect(i * w, cH * 1.5 + (j * h), cW, cH);
+                    //         break;
+                    //     }
+                    // }
 
                     idTrack++;
                 }
