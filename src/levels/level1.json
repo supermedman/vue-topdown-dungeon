@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "connections": [["E", 2], ["S", 3]]
+    },
+    {
+        "id": 2,
+        "connections": [["W", 1], ["S", 4]]
+    },
+    {
+        "id": 3,
+        "connections": [["N", 1], ["E", 4]]
+    },
+    {
+        "id": 4,
+        "connections": [["N", 2], ["W", 3]]
+    }
+]
