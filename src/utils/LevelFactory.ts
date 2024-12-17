@@ -283,6 +283,15 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
         failSafe++;
     } while (!finished);
 
+
+    /**
+     * This function handles all entropic evaluations, as well as validating valid options given each 
+     * collapse cycle that passes, updating tiles when/where needed
+     * 
+     * Also handles assigning ID values to directions, this is done **ONLY** to the cell collapsed for the given cycle.
+     * This evaluation is contained to happen only once per cycle
+     * @returns Updated cellData array after one collapse cycle
+     */
     function collapseCycle() {
         const shallowCellsCopy = cells.slice().filter(cell => !cell.collapsed);
         shallowCellsCopy.sort((a, b) => {
@@ -351,9 +360,6 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
                 }
 
                 // Cell is not collapsed, perform magic math
-                // let optionCollector = connectionMatches.grabAllOptions();
-                //let optionCollector: Array<Array<string>> = [];
-
                 // Collecting valid direction connection points, direction will not be present
                 // if invalid/no connection exists
                 const directionCollector: Array<string> = [];
@@ -373,11 +379,7 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
 
                     if (connectionMatches.checkForDirFromOptions("S", above.options)) 
                         directionCollector.push("N");
-
-                    // if (connectionMatches.checkForDirFromOptions("S", above.options)){
-                    //     optionCollector = optionCollector.concat(connectionMatches.checkAbove("N"));
-                    // } else optionCollector = optionCollector.concat(connectionMatches.checkAbove(undefined));
-                } // else optionCollector = optionCollector.concat(connectionMatches.checkAbove(undefined));
+                }
 
                 // =================
                 //    Check Right
@@ -394,11 +396,7 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
 
                     if (connectionMatches.checkForDirFromOptions("W", right.options))
                         directionCollector.push("E");
-
-                    // if (connectionMatches.checkForDirFromOptions("W", right.options)){
-                    //     optionCollector = optionCollector.concat(connectionMatches.checkRight("E"));
-                    // } else optionCollector = optionCollector.concat(connectionMatches.checkRight(undefined));
-                } //else optionCollector = optionCollector.concat(connectionMatches.checkRight(undefined));
+                }
 
                 // =================
                 //    Check Below
@@ -415,11 +413,7 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
 
                     if (connectionMatches.checkForDirFromOptions("N", below.options))
                         directionCollector.push("S");
-
-                    // if (connectionMatches.checkForDirFromOptions("N", below.options)){
-                    //     optionCollector = optionCollector.concat(connectionMatches.checkBelow("S"));
-                    // } else optionCollector = optionCollector.concat(connectionMatches.checkBelow(undefined));
-                } //else optionCollector = optionCollector.concat(connectionMatches.checkBelow(undefined));
+                }
 
                 // =================
                 //     Check Left
@@ -436,11 +430,7 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
 
                     if (connectionMatches.checkForDirFromOptions("E", left.options))
                         directionCollector.push("W");
-
-                    // if (connectionMatches.checkForDirFromOptions("E", left.options)){
-                    //     optionCollector = optionCollector.concat(connectionMatches.checkLeft("W"));
-                    // } else optionCollector = optionCollector.concat(connectionMatches.checkLeft(undefined));
-                } //else optionCollector = optionCollector.concat(connectionMatches.checkLeft(undefined));
+                }
 
                 const finalOptions: Array<Array<string>> = [];
 
@@ -449,25 +439,6 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
                 // options when repopulating cell options
 
                 finalOptions.push(...connectionMatches.validateConnectionOptions(directionCollector));
-
-                // Filter out all duped values
-
-                // for (const option of optionCollector){
-                //     if (finalOptions.length === 0) {
-                //         finalOptions.push(option); 
-                //         continue;
-                //     }
-                    
-                //     let skipAdd = false;
-
-                //     const [s1, d1] = option;
-                //     for (const addedOption of finalOptions){
-                //         const [s2, d2] = addedOption;
-                //         if (s1 === s2 && d1 === d2) skipAdd = true;
-                //     }
-                    
-                //     if (!skipAdd) finalOptions.push(option);
-                // }
 
                 // console.table(finalOptions);
 
