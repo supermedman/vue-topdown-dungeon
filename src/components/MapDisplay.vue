@@ -78,7 +78,7 @@ export default {
 
             // The Dimensions of our level are defined by the total tile count / 2
             // This will need to be dynamically set/calculated when map gen is implemented
-            const DIM = Math.log2(this.$props.levelCells?.length ?? 4);
+            const DIM = Math.sqrt(this.$props.levelCells?.length ?? 4);
 
             // Defining the draw size of a single map cell
             const h = c.height / DIM;
@@ -89,7 +89,7 @@ export default {
             // Retrieving level data, or anything thats been passed down to this component from the game manager
             // this.cellStorage = this.$props.mapManager?.tiledCells ?? [emptyCell];
 
-            console.log('Cell data updated values: ', ...this.cellStorage);
+            // console.log('Cell data updated values: ', ...this.cellStorage);
 
             let idTrack = 1;
             for (let j = 0; j < DIM; j++){

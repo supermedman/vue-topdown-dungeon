@@ -5,7 +5,7 @@ import MapDisplay from './MapDisplay.vue';
 
 import level_one from '../levels/level1.json';
 
-import { createLevel } from '../utils/LevelFactory';
+import { createLevel, simplifiedLevelGenTest } from '../utils/LevelFactory';
 
 import { TileData, MapTile, CellData, CellManager } from '../typing/Tiles'; // 
 
@@ -36,7 +36,7 @@ export default defineComponent({
             if (!this.levelLoaded) this.levelLoaded = true;
             else return;
 
-            console.log('Map Tiles Loaded: %d', this.mapController.populateBase(createLevel({ dim: 4 }))); // createLevel({ dim: 4 })
+            console.log('Map Tiles Loaded: %d', this.mapController.populateBase(simplifiedLevelGenTest())); // createLevel({ dim: 4 })
             // this.mapController.debugTiles();
             // this.mapController.debugCells();
             console.log('Map Cells Loaded: %d', this.mapController.populateCells());
@@ -125,6 +125,10 @@ export default defineComponent({
         },
         testFn() {
             createLevel({ dim: 4 });
+            // simplifiedLevelGenTest();
+        },
+        drawStep() {
+            simplifiedLevelGenTest();
         }
     }
 })

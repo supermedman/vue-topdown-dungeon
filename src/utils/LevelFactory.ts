@@ -122,7 +122,7 @@ const connectionTable = {
 
 
 const connectionMatches = {
-    grabAllOptions() {
+    grabAllOptions(filterArgs: Array<string> | undefined) {
         const fullOptionList: Array<Array<string>> = [];
 
         for (const style in TileStyle){
@@ -131,7 +131,27 @@ const connectionMatches = {
             for (const direct in TileDir){
                 //if (useSymbol && !isNaN(Number(direct))) continue;
                 if (isNaN(Number(direct))) continue;
-                fullOptionList.push([style, direct]);
+
+                // If no filter has been given, assume all options are valid
+                if (!filterArgs) {
+                    fullOptionList.push([style, direct]);
+                    continue;
+                }
+
+
+                const styleMatch = connectionTable[style as unknown as TileStyle];
+                const dirStyleMatch = styleMatch[direct as unknown as TileDir];
+
+                // For each directionStyle, compare against the given filter directions
+                // only adding those that have no matching connections 
+                let filterCounter = 0;
+                for (const dir of filterArgs){
+                    if (![...dirStyleMatch.map(arr => arr[0])].includes(dir)){
+                        filterCounter++;
+                    }
+                }
+
+                if (filterCounter === filterArgs.length) fullOptionList.push([style, direct]);
             }
         }
 
@@ -171,6 +191,13 @@ const connectionMatches = {
 
         return validConnectors;
     },
+    /**
+     * This method handles searching the connection table for valid options given the value of `dir`
+     * if `dir` exists check for all connection data that has a "S" point of connection
+     * if `dir` does not exist, check for all connection data that has no "S" point of connection
+     * @param dir "N" or undefined
+     * @returns Array of Style,Direction string pair arrays for valid options
+     */
     checkAbove(dir: string | undefined) {
         // If `dir` is provided, search for all "S" to "N" connections
         // EX. Checking all "S" to "N" connections
@@ -178,14 +205,38 @@ const connectionMatches = {
         // If no `dir` provided, search inversely to this ^^
         return (dir) ? this.staticLooper(dir) : this.staticLooper("N", true);
     },
+    /**
+     * This method handles searching the connection table for valid options given the value of `dir`
+     * if `dir` exists check for all connection data that has a "W" point of connection
+     * if `dir` does not exist, check for all connection data that has no "W" point of connection
+     * @param dir "E" or undefined
+     * @returns Array of Style,Direction string pair arrays for valid options
+     */
     checkRight(dir: string | undefined) {
         return (dir) ? this.staticLooper(dir) : this.staticLooper("E", true);
     },
+    /**
+     * This method handles searching the connection table for valid options given the value of `dir`
+     * if `dir` exists check for all connection data that has a "N" point of connection
+     * if `dir` does not exist, check for all connection data that has no "N" point of connection
+     * @param dir "S" or undefined
+     * @returns Array of Style,Direction string pair arrays for valid options
+     */
     checkBelow(dir: string | undefined) {
         return (dir) ? this.staticLooper(dir) : this.staticLooper("S", true);
     },
+    /**
+     * This method handles searching the connection table for valid options given the value of `dir`
+     * if `dir` exists check for all connection data that has a "E" point of connection
+     * if `dir` does not exist, check for all connection data that has no "E" point of connection
+     * @param dir "W" or undefined
+     * @returns Array of Style,Direction string pair arrays for valid options
+     */
     checkLeft(dir: string | undefined) {
         return (dir) ? this.staticLooper(dir) : this.staticLooper("W", true);
+    },
+    checkAnon(dir: string, useInverse=false) {
+        return this.staticLooper(dir, useInverse);
     },
     checkForDirFromOptions(dir: string, options: Array<Array<string>>) {
 
@@ -223,6 +274,8 @@ const connectionMatches = {
                 for (const staticDir of staticDirections){
                     const checkInverse = !dirList.includes(staticDir);
 
+                    // console.log(`Checking ${(checkInverse) ? 'Inverse of ': ''}direction matching ${staticDir}`);
+
                     const hasMatch = (checkInverse)
                     ? ![...dirStyleMatch.map(arr => arr[0])].includes(staticDir)
                     : [...dirStyleMatch.map(arr => arr[0])].includes(staticDir);
@@ -235,6 +288,43 @@ const connectionMatches = {
         }
 
         return validConnectors;
+        
+        for (const staticDir of staticDirections){
+            const checkInverse = !dirList.includes(staticDir);
+            
+            switch(staticDir){
+                case "N":
+                    validConnectors.push(...this.checkAbove((checkInverse) ? undefined : staticDir));
+                break;
+                case "E":
+                    validConnectors.push(...this.checkRight((checkInverse) ? undefined : staticDir));
+                break;
+                case "S":
+                    validConnectors.push(...this.checkBelow((checkInverse) ? undefined : staticDir));
+                break;
+                case "W":
+                    validConnectors.push(...this.checkLeft((checkInverse) ? undefined : staticDir));
+                break;
+            }
+        }
+
+        const filteredCollector: Array<Array<string>> = [];
+
+        const isDupe = (dirStyle: Array<string>) => {
+            const [s1, d1] = dirStyle;
+            return filteredCollector.some(([s2, d2]) => s2 === s1 && d2 === d1);
+        };
+
+        for (const ds of validConnectors){
+            if (!filteredCollector.length) {
+                filteredCollector.push(ds);
+                continue;
+            }
+
+            if (!isDupe(ds)) filteredCollector.push(ds);
+        }
+
+        return filteredCollector;
     }
 };
 
@@ -253,6 +343,85 @@ type CellLoader = {
 export function createLevel(footPrint: LevelArgs): RawTile[] {
     let cells: Array<CellLoader> = [];
 
+    interface RulesetMap extends Map<string, Map<string, Map<string, Array<Array<string>>>>> {
+
+    };
+
+    // Dynamically load the ruleset from the static lookup table.
+    function generateRuleset(): RulesetMap {
+        const finalRules: RulesetMap = new Map();
+
+        for (const style in TileStyle) {
+            if (isNaN(Number(style))) continue;
+
+            const directConnectMap = new Map();
+
+            for (const direct in TileDir) {
+                if (isNaN(Number(direct))) continue;
+
+                const styleMatch = connectionTable[style as unknown as TileStyle];
+                const dirStyleMatch = styleMatch[direct as unknown as TileDir];
+
+                // This needs to be built as the valid [style, direction] option pairs,
+                // ordered as "N", "E", "S", "W"
+
+                // EX: 1st Itter ["1", "1"]: valid connections are "N", "E", "S", "W"
+                // EX: This Cell checks below and finds that Cell has ["1", "1"] as a valid option
+                // Therefore: VVV these [style, direction] option pairs are valid choices
+                /**
+                 *  [
+                 *      ["1", "1"],
+                 *      ["1", "2"],
+                 *      ["1", "4"],
+                 *      ["1", "8"],
+                 *      ["2", "4"],
+                 *      ["4", "2"],
+                 *      ["4", "4"],
+                 *      ["4", "8"],
+                 *      ["8", "2"],
+                 *      ["8", "4"],
+                 *      ["16", "1"],
+                 *      ["16", 4]
+                 *  ]
+                 */
+                const validDirConnectors: Map<string, Array<Array<string>>> = new Map();
+
+                for (const d of ["N", "E", "S", "W"]) {
+                    const useInverse = !dirStyleMatch.map(arr => arr[0]).includes(d);
+                    // const checkFor = (useInverse) ? undefined : d;
+                    // console.log(`Checking ${d}, using inverse?: ${useInverse}`);
+                    switch(d){
+                        case "N":
+                            validDirConnectors.set(d, connectionMatches.checkAnon("S", useInverse));
+                        break;
+                        case "E":
+                            validDirConnectors.set(d, connectionMatches.checkAnon("W", useInverse));
+                        break;
+                        case "S":
+                            validDirConnectors.set(d, connectionMatches.checkAnon("N", useInverse));
+                        break;
+                        case "W":
+                            validDirConnectors.set(d, connectionMatches.checkAnon("E", useInverse));
+                        break;
+                        
+                    }
+                }
+
+                directConnectMap.set(direct, validDirConnectors);
+            }
+
+            finalRules.set(style, directConnectMap);
+        }
+
+        return finalRules;
+    }
+
+
+
+    const ruleset = generateRuleset();
+
+    // console.table(ruleset);
+
     let DIM = 2;
 
     if (!footPrint.dim && footPrint.height && footPrint.width) {
@@ -263,20 +432,56 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
 
     // Create 1D array that simulates 2D "grid"
     for (let i = 0; i < DIM * DIM; i++) {
+
+        // DIM = length of 1 side. EX: DIM = 4; width = 4, height = 4;
+        // Therefore while i < 4 modify initial "N" connection options 
+        const isTopBorder = i < DIM;
+        // If (i + 1) % DIM = 0 modify initial "E" connection options
+        const isRightBorder = ((i + 1) % DIM) === 0;
+        // If DIM - i < 4 modify initial "S" connection options
+        const isBottomBorder = ((DIM * DIM) - i) < DIM;
+         // If i % DIM = 0 modify initial "W" connection options 
+        const isLeftBorder = (i % DIM) === 0;
+
+        const useOptionMods = () => {
+            return isTopBorder || isRightBorder || isBottomBorder || isLeftBorder;
+        };
+
+        let optionMods: Array<string> | undefined = (useOptionMods()) 
+        ? []
+        : undefined;
+
+        if (optionMods) {
+            if (isTopBorder){
+                optionMods.push("N");
+            }
+
+            if (isRightBorder){
+                optionMods.push("E");
+            }
+
+            if (isBottomBorder){
+                optionMods.push("S");
+            }
+
+            if (isLeftBorder){
+                optionMods.push("W");
+            }
+        }
+
+        // Each cell starts with all options it should ever see!!
         cells[i] = {
             id: i + 1,
             collapsed: false,
-            options: connectionMatches.grabAllOptions()
+            options: connectionMatches.grabAllOptions(optionMods)
         };
     }
-
-    // console.table(cells);
 
     // Handle collapsing one cell at a time
     let finished = false, failSafe = 0;
     do {
         cells = collapseCycle();
-        console.table(cells);
+        // console.table(cells);
         if (cells.filter(c => !c.collapsed).length === 0) finished = true;
         
         if (failSafe >= 2 + (DIM * DIM)) break;
@@ -298,15 +503,48 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
             return a.options.length - b.options.length;
         });
 
-        // console.log('Lowest entropy: ', shallowCellsCopy[0]);
+        console.table(shallowCellsCopy);
 
         // Pulling all cells with matching entropy, picking one to be collapsed
         const collapseChoices = shallowCellsCopy.filter(cell => cell.options.length === shallowCellsCopy[0].options.length);
         const cellPicked = randArrPos(collapseChoices);
 
+        function debugCellOptions(c: CellLoader) {
+            if (!c.options.length) {
+                console.warn('Cell (ID: %d) has no available options!', c.id);
+                return;
+            }
+
+            type DebugCell = {
+                style: string;
+                direction: string;
+                connections: Array<Array<string>>;
+            };
+
+            const displayReadyData: Array<DebugCell> = [];
+            for (const [s, d] of c.options){
+                const styleMatch = connectionTable[s as unknown as TileStyle];
+                const dirStyleMatch = styleMatch[d as unknown as TileDir];
+                
+                displayReadyData.push({style: s, direction: d, connections: dirStyleMatch});
+            }
+
+            console.log('Cell (ID: %d) is being collapsed', c.id);
+            console.table(displayReadyData);
+
+            // for (const conDataArr of displayReadyData){
+
+            //     console.table(conDataArr);
+            // }
+        }
+
+        debugCellOptions(cellPicked);
+
         cellPicked.collapsed = true;
         cellPicked.options = [randArrPos(cellPicked.options)];
         cellPicked.connections = connectionMatches.grabFinalConnections(cellPicked.options[0][0], cellPicked.options[0][1]);
+
+        console.log('Cell (ID: %d) was collapsed into (Style: %d, Direction: %d)', cellPicked.id, cellPicked.options[0][0], cellPicked.options[0][1]);
 
         // ===================
         // Implement id filler 
@@ -356,97 +594,281 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
                 // Cell is completed, shift contents and continue
                 if (cells[idx].collapsed){
                     nextCells[idx] = cells[idx];
-                    continue;
+                    
+                } else {
+                    // Retain initial option list as reference.
+                    const initialOptions = cells[idx].options;
+                    let optionCollection = initialOptions;
+
+                    // if (initialOptions.length < 20) {
+                    //     nextCells[idx] = {
+                    //         id: cells[idx].id,
+                    //         collapsed: false,
+                    //         options: initialOptions
+                    //     };
+
+                    //     continue;
+                    // }
+
+
+                    // =================
+                    //    Check North
+                    // =================
+                    if (j > 0){
+                        const NORTH = cells[i + (j - 1) * DIM];
+                        let validOptions: Array<Array<string>> = [];
+                        for (const [s, d] of NORTH.options){
+                            const optionList = ruleset.get(s)?.get(d)?.get("N");
+                            if (optionList) validOptions.push(...optionList);
+                        }
+
+                        let filteredOptions: Array<Array<string>> = [];
+                        for (const [s, d] of validOptions){
+                            if (!filteredOptions.length) filteredOptions.push([s, d]);
+
+                            let isDupe = false;
+                            for (const [s1, d2] of filteredOptions){
+                                if (s === s1 && d === d2) {
+                                    isDupe = true;
+                                    break;
+                                }
+                            }
+
+                            if (!isDupe) filteredOptions.push([s, d]);
+                        }
+
+                        validOptions = filteredOptions;
+
+                        console.log('=== NORTH CELL OPTIONS ===');
+                        console.table(validOptions);
+
+                        optionCollection = optionCollection.concat(validOptions);
+                    }
+
+                    // =================
+                    //    Check East
+                    // =================
+                    if (i < DIM - 1){
+                        const EAST = cells[i + 1 + j * DIM];
+                        let validOptions: Array<Array<string>> = [];
+                        for (const [s, d] of EAST.options){
+                            const optionList = ruleset.get(s)?.get(d)?.get("E");
+                            if (optionList) validOptions.push(...optionList);
+                        }
+
+                        let filteredOptions: Array<Array<string>> = [];
+                        for (const [s, d] of validOptions){
+                            if (!filteredOptions.length) filteredOptions.push([s, d]);
+
+                            let isDupe = false;
+                            for (const [s1, d2] of filteredOptions){
+                                if (s === s1 && d === d2) {
+                                    isDupe = true;
+                                    break;
+                                }
+                            }
+
+                            if (!isDupe) filteredOptions.push([s, d]);
+                        }
+
+                        validOptions = filteredOptions;
+
+                        console.log('=== EAST CELL OPTIONS ===');
+                        console.table(validOptions);
+
+                        optionCollection = optionCollection.concat(validOptions);
+                    }
+
+                    // =================
+                    //    Check South
+                    // =================
+                    if (j < DIM - 1){
+                        const SOUTH = cells[i + (j + 1) * DIM];
+                        let validOptions: Array<Array<string>> = [];
+                        for (const [s, d] of SOUTH.options){
+                            const optionList = ruleset.get(s)?.get(d)?.get("S");
+                            if (optionList) validOptions.push(...optionList);
+                        }
+
+                        let filteredOptions: Array<Array<string>> = [];
+                        for (const [s, d] of validOptions){
+                            if (!filteredOptions.length) filteredOptions.push([s, d]);
+
+                            let isDupe = false;
+                            for (const [s1, d2] of filteredOptions){
+                                if (s === s1 && d === d2) {
+                                    isDupe = true;
+                                    break;
+                                }
+                            }
+
+                            if (!isDupe) filteredOptions.push([s, d]);
+                        }
+
+                        validOptions = filteredOptions;
+
+                        console.log('=== SOUTH CELL OPTIONS ===');
+                        console.table(validOptions);
+
+                        optionCollection = optionCollection.concat(validOptions);
+                    }
+
+                    // =================
+                    //     Check West
+                    // =================
+                    if (i > 0){
+                        const WEST = cells[i - 1 + j * DIM];
+                        let validOptions: Array<Array<string>> = [];
+                        for (const [s, d] of WEST.options){
+                            const optionList = ruleset.get(s)?.get(d)?.get("W");
+                            if (optionList) validOptions.push(...optionList);
+                        }
+
+                        let filteredOptions: Array<Array<string>> = [];
+                        for (const [s1, d1] of validOptions){
+                            if (!filteredOptions.length) filteredOptions.push([s1, d1]);
+
+                            let isDupe = false;
+                            for (const [s2, d2] of filteredOptions){
+                                if (s1 === s2 && d1 === d2) {
+                                    isDupe = true;
+                                    break;
+                                }
+                            }
+
+                            if (!isDupe) filteredOptions.push([s1, d1]);
+                        }
+
+                        validOptions = filteredOptions;
+                        
+                        console.log('=== WEST CELL OPTIONS ===');
+                        console.table(validOptions);
+
+                        optionCollection = optionCollection.concat(validOptions);
+                    }
+
+                    const finalFilteredOptions: Array<Array<string>> = [];
+                    for (const [s1, d1] of optionCollection){
+                        if (!finalFilteredOptions.length) finalFilteredOptions.push([s1, d1]);
+
+                        let isDupe = false;
+                        for (const [s2, d2] of finalFilteredOptions){
+                            if (s1 === s2 && d1 === d2) {
+                                isDupe = true;
+                                break;
+                            }
+                        }
+
+                        if (!isDupe) finalFilteredOptions.push([s1, d1]);
+                    }
+
+                    // Cell is not collapsed, perform magic math
+                    // Collecting valid direction connection points, direction will not be present
+                    // if invalid/no connection exists
+                    // const directionCollector: Array<string> = [];
+
+                    // // const initialDirections = ["N", "E", "S", "W"];
+
+                    // // =================
+                    // //    Check Above
+                    // // =================
+                    // if (j > 0){
+                    //     //console.log('== LOOKING UP ==');
+
+                    //     let above = cells[i + (j - 1) * DIM];
+                    //     // console.log(
+                    //     //     'Tile Above (ID: %d) has "S" connection: ', 
+                    //     //     above.id,
+                    //     //     connectionMatches.checkForDirFromOptions("S", above.options)
+                    //     // );
+
+                    //     // This logic needs to be "unseen" when looking at uncollapsed cells
+                    //     // AS IS: will auto ignore any inverse connection data due to algorithm
+                    //     if (connectionMatches.checkForDirFromOptions("S", above.options)) {
+                    //         directionCollector.push("N");
+                    //     } 
+                    // }
+
+                    // // =================
+                    // //    Check Right
+                    // // =================
+                    // if (i < DIM - 1){
+                    //     //console.log('== LOOKING RIGHT ==');
+
+                    //     let right = cells[i + 1 + j * DIM];
+                    //     // console.log(
+                    //     //     'Tile Right (ID: %d) has "W" connection: ', 
+                    //     //     right.id,
+                    //     //     connectionMatches.checkForDirFromOptions("W", right.options)
+                    //     // );
+
+                    //     if (connectionMatches.checkForDirFromOptions("W", right.options)) {
+                    //         directionCollector.push("E");
+                    //     } 
+                    // }
+
+                    // // =================
+                    // //    Check Below
+                    // // =================
+                    // if (j < DIM - 1){
+                    //     //console.log('== LOOKING DOWN ==');
+
+                    //     let below = cells[i + (j + 1) * DIM];
+                    //     // console.log(
+                    //     //     'Tile Below (ID: %d) has "N" connection: ', 
+                    //     //     below.id,
+                    //     //     connectionMatches.checkForDirFromOptions("N", below.options)
+                    //     // );
+
+                    //     if (connectionMatches.checkForDirFromOptions("N", below.options)){
+                    //         directionCollector.push("S");
+                    //     } 
+                    // }
+
+                    // // =================
+                    // //     Check Left
+                    // // =================
+                    // if (i > 0){
+                    //     //console.log('== LOOKING LEFT ==');
+
+                    //     let left = cells[i - 1 + j * DIM];
+                    //     // console.log(
+                    //     //     'Tile Left (ID: %d) has "E" connection: ', 
+                    //     //     left.id,
+                    //     //     connectionMatches.checkForDirFromOptions("E", left.options)
+                    //     // );
+
+                    //     if (connectionMatches.checkForDirFromOptions("E", left.options)){
+                    //         directionCollector.push("W");
+                    //     } 
+                    // }
+
+                    // const finalOptions: Array<Array<string>> = [];
+
+                    const finalOptions = finalFilteredOptions;
+
+                    // LOGIC UPDATE NEEDED
+                    // Compile a list of connection matches, using that array to filter for valid
+                    // options when repopulating cell options
+
+                    // directionCollector.push(...initialDirections);
+
+                    // Handle enforced OOB options influence
+                    // EX: cell @ index 0 (Top Left) should never try to connect "N" or "W"
+
+                    console.log('Cell (ID: %d) has %d Options before validation', cells[idx].id, cells[idx].options.length);
+
+                    // finalOptions.push(...connectionMatches.validateConnectionOptions(directionCollector));
+
+                    // console.table(finalOptions);
+                    console.log('Cell (ID: %d) has %d Options after validation', cells[idx].id, finalOptions.length);
+
+                    nextCells[idx] = {
+                        id: cells[idx].id,
+                        collapsed: false,
+                        options: finalOptions
+                    };
                 }
-
-                // Cell is not collapsed, perform magic math
-                // Collecting valid direction connection points, direction will not be present
-                // if invalid/no connection exists
-                const directionCollector: Array<string> = [];
-
-                // =================
-                //    Check Above
-                // =================
-                if (j > 0){
-                    //console.log('== LOOKING UP ==');
-
-                    let above = cells[i + (j - 1) * DIM];
-                    console.log(
-                        'Tile Above (ID: %d) has "S" connection: ', 
-                        above.id,
-                        connectionMatches.checkForDirFromOptions("S", above.options)
-                    );
-
-                    if (connectionMatches.checkForDirFromOptions("S", above.options)) 
-                        directionCollector.push("N");
-                }
-
-                // =================
-                //    Check Right
-                // =================
-                if (i < DIM - 1){
-                    //console.log('== LOOKING RIGHT ==');
-
-                    let right = cells[i + 1 + j * DIM];
-                    console.log(
-                        'Tile Right (ID: %d) has "W" connection: ', 
-                        right.id,
-                        connectionMatches.checkForDirFromOptions("W", right.options)
-                    );
-
-                    if (connectionMatches.checkForDirFromOptions("W", right.options))
-                        directionCollector.push("E");
-                }
-
-                // =================
-                //    Check Below
-                // =================
-                if (j < DIM - 1){
-                    //console.log('== LOOKING DOWN ==');
-
-                    let below = cells[i + (j + 1) * DIM];
-                    console.log(
-                        'Tile Below (ID: %d) has "N" connection: ', 
-                        below.id,
-                        connectionMatches.checkForDirFromOptions("N", below.options)
-                    );
-
-                    if (connectionMatches.checkForDirFromOptions("N", below.options))
-                        directionCollector.push("S");
-                }
-
-                // =================
-                //     Check Left
-                // =================
-                if (i > 0){
-                    //console.log('== LOOKING LEFT ==');
-
-                    let left = cells[i - 1 + j * DIM];
-                    console.log(
-                        'Tile Left (ID: %d) has "E" connection: ', 
-                        left.id,
-                        connectionMatches.checkForDirFromOptions("E", left.options)
-                    );
-
-                    if (connectionMatches.checkForDirFromOptions("E", left.options))
-                        directionCollector.push("W");
-                }
-
-                const finalOptions: Array<Array<string>> = [];
-
-                // LOGIC UPDATE NEEDED
-                // Compile a list of connection matches, using that array to filter for valid
-                // options when repopulating cell options
-
-                finalOptions.push(...connectionMatches.validateConnectionOptions(directionCollector));
-
-                // console.table(finalOptions);
-
-                nextCells[idx] = {
-                    id: cells[idx].id,
-                    collapsed: false,
-                    options: finalOptions
-                };
             }
         }
 
@@ -457,4 +879,325 @@ export function createLevel(footPrint: LevelArgs): RawTile[] {
 
     // TEMP EARLY RETURN
     return loadedLevel;
+}
+
+
+const simpleRules = {
+    Open_North: {
+        North: 1,
+        East: 1,
+        South: 1,
+        West: 1,
+        Connections: [["N"], ["E"], ["S"], ["W"]]
+    },
+    Open_East: {
+        North: 1,
+        East: 1,
+        South: 1,
+        West: 1,
+        Connections: [["N"], ["E"], ["S"], ["W"]]
+    },
+    Open_South: {
+        North: 1,
+        East: 1,
+        South: 1,
+        West: 1,
+        Connections: [["N"], ["E"], ["S"], ["W"]]
+    },
+    Open_West: {
+        North: 1,
+        East: 1,
+        South: 1,
+        West: 1,
+        Connections: [["N"], ["E"], ["S"], ["W"]]
+    },
+    Closed_North: {
+        North: 1,
+        East: 0,
+        South: 0,
+        West: 0,
+        Connections: [["N"]]
+    },
+    Closed_East: {
+        North: 0,
+        East: 1,
+        South: 0,
+        West: 0,
+        Connections: [["E"]]
+    },
+    Closed_South: {
+        North: 0,
+        East: 0,
+        South: 1,
+        West: 0,
+        Connections: [["S"]]
+    },
+    Closed_West: {
+        North: 0,
+        East: 0,
+        South: 0,
+        West: 1,
+        Connections: [["W"]]
+    },
+    T_North: {
+        North: 1,
+        East: 1,
+        South: 0,
+        West: 1,
+        Connections: [["N"], ["E"], ["W"]]
+    },
+    T_East: {
+        North: 1,
+        East: 1,
+        South: 1,
+        West: 0,
+        Connections: [["N"], ["E"], ["S"]]
+    },
+    T_South: {
+        North: 0,
+        East: 1,
+        South: 1,
+        West: 1,
+        Connections: [["S"], ["E"], ["W"]]
+    },
+    T_West: {
+        North: 1,
+        East: 0,
+        South: 1,
+        West: 1,
+        Connections: [["N"], ["S"], ["W"]]
+    },
+    L_North: {
+        North: 1,
+        East: 1,
+        South: 0,
+        West: 0,
+        Connections: [["N"], ["E"]],
+    },
+    L_East: {
+        North: 0,
+        East: 1,
+        South: 1,
+        West: 0,
+        Connections: [["E"], ["S"]],
+    },
+    L_South: {
+        North: 0,
+        East: 0,
+        South: 1,
+        West: 1,
+        Connections: [["S"], ["W"]],
+    },
+    L_West: {
+        North: 1,
+        East: 0,
+        South: 0,
+        West: 1,
+        Connections: [["W"], ["N"]],
+    },
+};
+
+type RuleKey = keyof typeof simpleRules;
+
+const levelCellLoader = {
+    loadDefaultOptions(): ReturnType<string[] extends RuleKey ? any : any> {
+        return Object.keys(simpleRules).map((k) => k);
+    }
+}
+
+
+export class LevelCell {
+    id: number;
+    collapsed: boolean;
+    options: Array<RuleKey>;
+    connections?: Array<Array<Con>>;
+
+    constructor(idx: number, givenOptions: Array<RuleKey> | undefined) {
+        this.id = idx + 1;
+        this.collapsed = false;
+        this.options = (givenOptions) ? givenOptions : levelCellLoader.loadDefaultOptions();
+    }
+};
+
+export function filterForConnection(conTypes: Array<number | RuleKey>, availableOptions: Array<RuleKey>, conDirect: string) {
+    const oKeys = availableOptions;
+
+    const filterKeys = conTypes.filter(t => typeof t === 'number');
+
+    const validReturn: Array<RuleKey> = [];
+    for (const k of oKeys){
+        switch(conDirect){
+            case "North":
+                if (filterKeys.includes(simpleRules[k].North)) validReturn.push(k);
+            break;
+            case "East":
+                if (filterKeys.includes(simpleRules[k].East)) validReturn.push(k);
+            break;
+            case "South":
+                if (filterKeys.includes(simpleRules[k].South)) validReturn.push(k);
+            break;
+            case "West":
+                if (filterKeys.includes(simpleRules[k].West)) validReturn.push(k);
+            break;
+        }
+    }
+
+    return validReturn;
+}
+
+export function validateOptions(optArr: Array<RuleKey>, validArr: Array<RuleKey | number>) {
+    for (let i = optArr.length - 1; i >= 0; i--){
+        let ele = optArr[i];
+        if (!validArr.includes(ele)){
+            optArr.splice(i, 1);
+        }
+    }
+}
+
+export function cellCycle(level: Array<LevelCell>, DIM: number) {
+    let levelCopy = level.slice();
+    levelCopy = levelCopy.filter(c => !c.collapsed);
+    levelCopy.sort((a, b) => {
+        return a.options.length - b.options.length;
+    });
+
+    const cellPicked = randArrPos(levelCopy.filter(c => c.options.length === levelCopy[0].options.length));
+
+    cellPicked.collapsed = true;
+    cellPicked.options = [randArrPos(cellPicked.options)];
+    cellPicked.connections = simpleRules[cellPicked.options[0]].Connections;
+
+    for (const cData of cellPicked.connections){
+        //let j = Math.floor(cellPicked.id / DIM);
+        //let i = cellPicked.id - DIM * j;
+        switch(cData[0]){
+            case "N":
+                // Look at tile above, push id
+                // i + (j - 1) * DIM
+                // j = Math.floor(cellPicked.id / DIM)
+                // i = cellPicked.id - DIM * j
+                cData[1] = cellPicked.id - DIM;
+            break;
+            case "E":
+                // Look at tile to the right, push id
+                // i + 1 + j * DIM
+                cData[1] = cellPicked.id + 1;
+            break;
+            case "S":
+                // Look at tile below, push id
+                // i + (j + 1) * DIM
+                cData[1] = cellPicked.id + DIM;
+            break;
+            case "W":
+                // Look at tile to the left, push id
+                // i - 1 + j * DIM
+                cData[1] = cellPicked.id - 1;
+            break;
+        }
+    }
+
+    console.log('CELL COLLAPSED', cellPicked);
+
+    const nextLevel: Array<LevelCell> = [];
+
+    for (let j = 0; j < DIM; j++){
+        for (let i = 0; i < DIM; i++){
+            let idx = i + j * DIM;
+
+            if (level[idx].collapsed){
+                nextLevel[idx] = level[idx];
+                continue;
+            }
+
+            let options: Array<RuleKey> = levelCellLoader.loadDefaultOptions();
+
+            // NORTH
+            if (j > 0) {
+                const NORTH = level[i + (j - 1) * DIM];
+                let validOptions: Array<number | RuleKey> = [];
+                for (let option of NORTH.options){
+                    let valid = simpleRules[option].South;
+                    validOptions = validOptions.concat(valid);
+                }
+
+                validOptions = filterForConnection(validOptions, options, "North");
+
+                validateOptions(options, validOptions);
+            }
+
+            // EAST
+            if (i < DIM - 1) {
+                const EAST = level[i + 1 + j * DIM];
+                let validOptions: Array<number | RuleKey> = [];
+                for (let option of EAST.options){
+                    let valid = simpleRules[option].West;
+                    validOptions = validOptions.concat(valid);
+                }
+
+                validOptions = filterForConnection(validOptions, options, "East");
+
+                validateOptions(options, validOptions);
+            }
+
+            // SOUTH
+            if (j > DIM - 1) {
+                const SOUTH = level[i + (j + 1) * DIM];
+                let validOptions: Array<number | RuleKey> = [];
+                for (let option of SOUTH.options){
+                    let valid = simpleRules[option].North;
+                    validOptions = validOptions.concat(valid);
+                }
+
+                validOptions = filterForConnection(validOptions, options, "South");
+
+                validateOptions(options, validOptions);
+            }
+
+            // WEST
+            if (i > 0) {
+                const WEST = level[i - 1 + j * DIM];
+                let validOptions: Array<number | RuleKey> = [];
+                for (let option of WEST.options){
+                    let valid = simpleRules[option].East;
+                    validOptions = validOptions.concat(valid);
+                }
+
+                validOptions = filterForConnection(validOptions, options, "West");
+
+                validateOptions(options, validOptions);
+            }
+
+
+            nextLevel[idx] = new LevelCell(idx, options);
+        }
+    }
+
+    return nextLevel;
+}
+
+
+export function convertToRawTiles(level: Array<LevelCell>) {
+    return level.map(cell => ({ id: cell.id, connections: cell.connections ?? [["", 0]] }));
+}
+
+
+
+export function simplifiedLevelGenTest() {
+    const DIM = 4;
+
+    let level: Array<LevelCell> = Array.from([...new Array(DIM * DIM).fill(0)].map((_, idx, arr) => arr[idx] = new LevelCell(idx, undefined)));
+
+    console.log(level);
+
+    let loopFor = DIM * DIM;
+
+    do {
+        level = cellCycle(level, DIM);
+        // console.table(level);
+        if (level.filter(c => !c.collapsed).length <= 0) break;
+
+        loopFor--;
+    } while (loopFor > 0);
+
+    return level.map(cell => ({ id: cell.id, connections: cell.connections ?? [["", 0]] }));
 }

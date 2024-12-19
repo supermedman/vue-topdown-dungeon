@@ -1,6 +1,7 @@
 <script setup lang="ts">
 //import HelloWorld from './components/HelloWorld.vue'
 import GameManager from './components/GameManager.vue'
+import LevelTesting from './components/LevelTesting.vue';
 </script>
 
 <!-- 
@@ -16,6 +17,7 @@ import GameManager from './components/GameManager.vue'
 -->
 
 <template>
+  <LevelTesting></LevelTesting>
   <GameManager></GameManager>
 </template>
 
