@@ -27,6 +27,9 @@ export default {
         levelCells: {
             type: Array<CellData>
         },
+        debugMode: {
+            type: Boolean
+        }
         // mapManager: {
         //     type: CellManager
         // },
@@ -49,6 +52,13 @@ export default {
 
             this.renderGameMap();
         },
+        debugMode(newData: boolean, oldData: boolean) {
+            if (newData === oldData) return;
+
+            console.log('Debug state changed, attempting to render content...');
+
+            this.renderGameMap();
+        }
         // activeData(newData: MapTile, oldData: MapTile | null) {
         //     // console.log('DATA UPDATED IN MAPDISPLAY: ', newData);
         //     // console.log('Old data value: ', oldData);
@@ -119,6 +129,13 @@ export default {
                     } else ctx.fillStyle = 'grey';
                     // Draw cell using decided colour
                     ctx.fillRect(i * w, j * h, w, h);
+
+                    //console.log('Debug state: ', this.$props.debugMode);
+
+                    if (!this.$props.debugMode) {
+                        idTrack++;
+                        continue;
+                    }
 
                     // Draw connectors as small red/green squares
                     // For each tile, draw each connection:

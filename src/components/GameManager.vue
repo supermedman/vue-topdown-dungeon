@@ -28,7 +28,8 @@ export default defineComponent({
                 S: false,
                 W: false
             },
-            levelLoaded: false
+            levelLoaded: false,
+            debugEnabled: false
         }
     },
     methods: {
@@ -145,11 +146,13 @@ export default defineComponent({
     <MapDisplay 
     :hidden="!levelLoaded" 
     :level-cells="watchedCells"
+    :debug-mode="debugEnabled"
     ></MapDisplay>
     <div class="game-state-controls">
         <button style="button" :disabled="levelLoaded" @click="loadLevel">Start!</button>
         <button style="button" :disabled="!levelLoaded" @click="resetLevel">Reset!</button>
-        <button style="button" @click="testFn">GEN LEVEL</button>
+        <button style="button" @click="debugEnabled = !debugEnabled">Toggle Debug</button>
+        <!--<button style="button" @click="testFn">GEN LEVEL</button>-->
         
         <button style="button" :disabled="!activeConnections.W" @click="move('W')"><</button>
         <button style="button" :disabled="!activeConnections.N" @click="move('N')">^</button>

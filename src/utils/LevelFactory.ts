@@ -1009,6 +1009,34 @@ const simpleRules = {
         West: 1,
         Connections: [["W"], ["N"]],
     },
+    I_North: {
+        North: 1,
+        East: 0,
+        South: 1,
+        West: 0,
+        Connections: [["N"], ["S"]],
+    },
+    I_East: {
+        North: 0,
+        East: 1,
+        South: 0,
+        West: 1,
+        Connections: [["E"], ["W"]],
+    },
+    I_South: {
+        North: 1,
+        East: 0,
+        South: 1,
+        West: 0,
+        Connections: [["N"], ["S"]],
+    },
+    I_West: {
+        North: 0,
+        East: 1,
+        South: 0,
+        West: 1,
+        Connections: [["E"], ["W"]],
+    },
 };
 
 type RuleKey = keyof typeof simpleRules;
