@@ -5,12 +5,19 @@ import MapDisplay from './MapDisplay.vue';
 
 import level_one from '../levels/level1.json';
 
-import { createLevel, simplifiedLevelGenTest } from '../utils/LevelFactory';
+import { createLevel, loadLevel, MakerMap, simplifiedLevelGenTest } from '../utils/LevelFactory';
 
 import { TileData, MapTile, CellData, CellManager } from '../typing/Tiles'; // 
 
 const emptyTile = new MapTile({ id: 0, connections: [["", 0]]});
 const emptyCell = new CellData({ id: 0, connections: [["", 0]]});
+
+type ActiveCon = {
+    N: boolean,
+    E: boolean,
+    S: boolean,
+    W: boolean
+};
 
 export default defineComponent({
     components: {
@@ -32,12 +39,51 @@ export default defineComponent({
             debugEnabled: false
         }
     },
+    created() {
+        window.addEventListener('keydown', (e) => {
+            if (!this.levelLoaded) return;
+            let keySwitch = e.key;
+
+            if (['ArrowUp', 'w'].includes(keySwitch)) {
+                e.preventDefault();
+                keySwitch = 'ArrowUp';
+            } else if (['ArrowRight', 'd'].includes(keySwitch)) {
+                e.preventDefault();
+                keySwitch = 'ArrowRight';
+            } else if (['ArrowDown', 's'].includes(keySwitch)) {
+                e.preventDefault();
+                keySwitch = 'ArrowDown';
+            } else if (['ArrowLeft', 'a'].includes(keySwitch)) {
+                e.preventDefault();
+                keySwitch = 'ArrowLeft';
+            }
+
+            switch (keySwitch) {
+                case 'ArrowUp':
+                    this.move('N');
+                    break;
+                case 'ArrowRight':
+                    this.move('E');
+                    break;
+                case 'ArrowDown':
+                    this.move('S');
+                    break;
+                case 'ArrowLeft':
+                    this.move('W');
+                    break;
+                default:
+                    break;
+            }
+        });
+    },
     methods: {
         loadLevel(){
             if (!this.levelLoaded) this.levelLoaded = true;
             else return;
 
-            console.log('Map Tiles Loaded: %d', this.mapController.populateBase(simplifiedLevelGenTest())); // createLevel({ dim: 4 })
+            const theMaker = new MakerMap({ dim: 8 });
+
+            console.log('Map Tiles Loaded: %d', this.mapController.populateBase(loadLevel(theMaker))); // createLevel({ dim: 4 })
             // this.mapController.debugTiles();
             // this.mapController.debugCells();
             console.log('Map Cells Loaded: %d', this.mapController.populateCells());
@@ -86,12 +132,24 @@ export default defineComponent({
             // console.log('Before connections cleared and updated: ', this.activeConnections);
 
             this.clearActiveConnections();
-            Object.entries(this.activeConnections)
-            .filter(([k,]) => movementFilter(k))
-            .reduce((acc, [k,]) => {
-                this.activeConnections[k] = true;
-                return acc;
-            }, {});
+
+            type DirKey = keyof typeof this.activeConnections;
+
+            function fillDirKeys(AC: ActiveCon): ReturnType<string[] extends DirKey ? any : any> {
+                return Object.keys(AC).map((k) => k);
+            }
+
+            const staticDirList: Array<DirKey> = fillDirKeys(this.activeConnections);
+            for (const statDir of staticDirList) {
+                if (movementFilter(statDir)) this.activeConnections[statDir] = true;
+            }
+
+            // Object.entries(this.activeConnections)
+            // .filter(([k,]) => movementFilter(k))
+            // .reduce((acc, [k,]) => {
+            //     this.activeConnections[k] = true;
+            //     return acc;
+            // }, {});
 
             console.log(
                 'After connections cleared and updated: \nN: %s \nE: %s \nS: %s \nW: %s', 

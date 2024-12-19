@@ -132,6 +132,73 @@ export default {
 
                     //console.log('Debug state: ', this.$props.debugMode);
 
+                    // connectionHeight & connectionWidth: (Alias) cH & cW
+                    // Used for scaling connection squares to 1/4 the size of a map cell
+                    const cH = h / 4;
+                    const cW = w / 4;
+
+                    const staticDirList = ["N", "E", "S", "W"];
+                    // This is the data we will use to determine the draw style
+                    // for each of the connections, if they do not exist, draw a "wall"
+                    const connectedCellData = cell.connections.map(([dir,]) => dir);
+
+                    // Drawing "Border" giving visual context to active Cell connections
+                    ctx.fillStyle = 'black';
+                    for (const statDir of staticDirList){
+                        let blockPath = !connectedCellData.includes(statDir);
+                        if (!blockPath) {
+                           const dirMatchID = cell.connections.filter(([dir,]) => dir === statDir)?.[0] ?? null;
+                           if (dirMatchID && dirMatchID[1] === -1) blockPath = true;
+                        }
+
+                        // TEMP draw
+                        //const hideN = true, hideE = true, hideS = true, hideW = false;
+
+                        switch(statDir){
+                            case "N":
+                                ctx.fillRect(i * w, j * h, cW, cH);
+                                //if (hideN) break;
+                                if (blockPath) {
+                                    ctx.fillRect((cW + (i * w)) - 2, (j * h) - 2, (cW * 2) + 4, cH + 4);
+                                    ctx.fillStyle = 'darkgrey';
+                                    ctx.fillRect(cW + (i * w), j * h, cW * 2, cH);
+                                    ctx.fillStyle = 'black';
+                                }
+                            break;
+                            case "E":
+                                ctx.fillRect(cW * 3 + (i * w), j * h, cW, cH);
+                                //if (hideE) break;
+                                if (blockPath) {
+                                    ctx.fillRect((cW * 3 + (i * w)) - 2, (cH + (j * h)) - 2, cW + 4, (cH * 2) + 4);
+                                    ctx.fillStyle = 'darkgrey';
+                                    ctx.fillRect(cW * 3 + (i * w), cH + (j * h), cW, cH * 2);
+                                    ctx.fillStyle = 'black';
+                                }
+                            break;
+                            case "S":
+                                ctx.fillRect(cW * 3 + (i * w), cH * 3 + (j * h), cW, cH);
+                                //if (hideS) break;
+                                if (blockPath) {
+                                    ctx.fillRect((cW + (i * w)) - 2, (cH * 3 + (j * h)) - 2, (cW * 2) + 4, cH + 4);
+                                    ctx.fillStyle = 'darkgrey';
+                                    ctx.fillRect(cW + (i * w), cH * 3 + (j * h), cW * 2, cH);
+                                    ctx.fillStyle = 'black';
+                                }
+                            break;
+                            case "W":
+                                ctx.fillRect(i * w, cH * 3 + (j * h), cW, cH);
+                                //if (hideW) break;
+                                if (blockPath) {
+                                    ctx.fillRect((i * w) - 2, (cH + (j * h)) - 2, cW + 4, (cH * 2) + 4);
+                                    ctx.fillStyle = 'darkgrey';
+                                    ctx.fillRect(i * w, cH + (j * h), cW, cH * 2);
+                                    ctx.fillStyle = 'black';
+                                }
+                            break;
+                        }
+                    }
+
+
                     if (!this.$props.debugMode) {
                         idTrack++;
                         continue;
@@ -141,16 +208,8 @@ export default {
                     // For each tile, draw each connection:
                     // If !dir red square, otherwise green square
 
-                    // connectionHeight & connectionWidth: (Alias) cH & cW
-                    // Used for scaling connection squares to 1/4 the size of a map cell
-                    const cH = h / 4;
-                    const cW = w / 4;
-
                     ctx.fillStyle = 'white';
                     ctx.fillText(`${cell.id}`, cW * 1.5 + (i * w), cH * 1.8 + (j * h), cW);
-
-                    const staticDirList = ["N", "E", "S", "W"];
-                    const connectedCellData = cell.connections.map(([dir,]) => dir);
 
                     for (const statDir of staticDirList){
                         ctx.fillStyle = (!connectedCellData.includes(statDir))

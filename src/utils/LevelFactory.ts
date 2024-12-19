@@ -10,7 +10,7 @@ interface LevelArgs {
 
 type MU = (LevelArgs | undefined)
 
-class MakerMap implements LevelArgs {
+export class MakerMap implements LevelArgs {
     dim?: number | undefined;
     width?: number | undefined;
     height?: number | undefined;
@@ -19,6 +19,13 @@ class MakerMap implements LevelArgs {
         this.dim = args.dim;
         this.height = args.height;
         this.width = args.width;
+    }
+
+    giveDimension() {
+        if (this.dim) return this.dim;
+        if (this.height) return this.height;
+        if (this.width) return this.width;
+        return 4;
     }
 }
 
@@ -1152,7 +1159,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 if (cellPicked.id > DIM) {
                     cData[1] = cellPicked.id - DIM;
                 } else {
-                    cData[1] = -1;
+                    cData[1] = cellPicked.id;
                 }
                 //console.log(`Cell (ID: ${cellPicked.id}) North of collapsed: `, cData[1]);
                 // const cellAbove = level.find(c => c.id === cData[1]);
@@ -1164,7 +1171,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 if (cellPicked.id % DIM !== 0) {
                     cData[1] = cellPicked.id + 1;
                 } else {
-                    cData[1] = -1;
+                    cData[1] = cellPicked.id;
                 }
                 //console.log(`Cell (ID: ${cellPicked.id}) East of collapsed: `, cData[1]);
                 // const cellRight = level.find(c => c.id === cData[1]);
@@ -1176,7 +1183,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 if (cellPicked.id <= DIM * (DIM - 1)) {
                     cData[1] = cellPicked.id + DIM;
                 } else {
-                    cData[1] = -1;
+                    cData[1] = cellPicked.id;
                 }
                 //console.log(`Cell (ID: ${cellPicked.id}) South of collapsed: `, cData[1]);
                 // const cellBelow = level.find(c => c.id === cData[1]);
@@ -1188,7 +1195,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 if ((cellPicked.id - 1) % DIM !== 0) {
                     cData[1] = cellPicked.id - 1;
                 } else {
-                    cData[1] = -1;
+                    cData[1] = cellPicked.id;
                 }
                 //console.log(`Cell (ID: ${cellPicked.id}) West of collapsed: `, cData[1]);
                 // const cellLeft = level.find(c => c.id === cData[1]);
@@ -1226,7 +1233,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 validOptions = filterForConnection(validOptions, options, "North");
 
                 validateOptions(options, validOptions);
-            }
+            } else validateOptions(options, filterForConnection([0], options, "North"));
 
             // EAST
             if (i < DIM - 1) {
@@ -1242,7 +1249,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 validOptions = filterForConnection(validOptions, options, "East");
 
                 validateOptions(options, validOptions);
-            }
+            } else validateOptions(options, filterForConnection([0], options, "East"));
 
             // SOUTH
             if (j < DIM - 1) {
@@ -1258,7 +1265,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 validOptions = filterForConnection(validOptions, options, "South");
 
                 validateOptions(options, validOptions);
-            }
+            } else validateOptions(options, filterForConnection([0], options, "South"));
 
             // WEST
             if (i > 0) {
@@ -1274,7 +1281,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 validOptions = filterForConnection(validOptions, options, "West");
 
                 validateOptions(options, validOptions);
-            }
+            } else validateOptions(options, filterForConnection([0], options, "West"));
 
 
             nextLevel[idx] = new LevelCell(idx, options);
@@ -1291,6 +1298,27 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
  */
 export function convertToRawTiles(level: Array<LevelCell>) {
     return level.map(cell => ({ id: cell.id, connections: cell.connections ?? [["", 1]] }));
+}
+
+
+
+export function loadLevel(options: MakerMap): RawTile[] {
+    // Add additional logic to handle options having uneven width/height values
+    const DIM = options.giveDimension();
+
+    let level: Array<LevelCell> = Array.from([...new Array(DIM * DIM).fill(0)].map((_, idx, arr) => arr[idx] = new LevelCell(idx, undefined)));
+
+    let loopFor = DIM * DIM;
+
+    do {
+        level = cellCycle(level, DIM);
+        // console.table(level);
+        if (level.filter(c => !c.collapsed).length <= 0) break;
+
+        loopFor--;
+    } while (loopFor > 0);
+
+    return convertToRawTiles(level);
 }
 
 
