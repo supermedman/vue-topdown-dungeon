@@ -129,6 +129,9 @@ export default {
                     const cH = h / 4;
                     const cW = w / 4;
 
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(`${cell.id}`, cW * 1.5 + (i * w), cH * 1.8 + (j * h), cW);
+
                     const staticDirList = ["N", "E", "S", "W"];
                     const connectedCellData = cell.connections.map(([dir,]) => dir);
 
@@ -136,19 +139,37 @@ export default {
                         ctx.fillStyle = (!connectedCellData.includes(statDir))
                         ? 'red'
                         : 'lightgreen';
+
+                        const dirMatchID = cell.connections.filter(([dir,]) => dir === statDir)?.[0] ?? null;
                         
                         switch(statDir){
                             case "N":
                                 ctx.fillRect(cW * 1.5 + (i * w), j * h, cW, cH);
+                                if (dirMatchID) {
+                                    ctx.fillStyle = 'black';
+                                    ctx.fillText(`${dirMatchID[1]}`, cW * 1.5 + (i * w), j * h, cW);
+                                }
                             break;
                             case "E":
                                 ctx.fillRect(cW * 3 + (i * w), cH * 1.5 + (j * h), cW, cH);
+                                if (dirMatchID) {
+                                    ctx.fillStyle = 'black';
+                                    ctx.fillText(`${dirMatchID[1]}`, cW * 3 + (i * w), cH * 1.5 + (j * h), cW);
+                                }
                             break;
                             case "S":
                                 ctx.fillRect(cW * 1.5 + (i * w), cH * 3 + (j * h), cW, cH);
+                                if (dirMatchID) {
+                                    ctx.fillStyle = 'black';
+                                    ctx.fillText(`${dirMatchID[1]}`, cW * 1.5 + (i * w), cH * 3 + (j * h), cW);
+                                }
                             break;
                             case "W":
                                 ctx.fillRect(i * w, cH * 1.5 + (j * h), cW, cH);
+                                if (dirMatchID) {
+                                    ctx.fillStyle = 'black';
+                                    ctx.fillText(`${dirMatchID[1]}`, i * w, cH * 1.5 + (j * h), cW);
+                                }
                             break;
                         }
                     }

@@ -8,6 +8,20 @@ interface LevelArgs {
     height?: number;
 };
 
+type MU = (LevelArgs | undefined)
+
+class MakerMap implements LevelArgs {
+    dim?: number | undefined;
+    width?: number | undefined;
+    height?: number | undefined;
+    constructor(args: MU) {
+        if (!args) { this.dim = 4; return; }
+        this.dim = args.dim;
+        this.height = args.height;
+        this.width = args.width;
+    }
+}
+
 // Tile
 //   . N .
 //   W   E
@@ -1071,10 +1085,15 @@ export function validateOptions(optArr: Array<RuleKey>, validArr: Array<RuleKey 
  * This function handles the following in order:
  * 
  * 1) Collapse cell with lowest entropy selecting one style option as its state
+ * 
+ * 
  * 2) Update Collapsed Cell's connection data array to include neigbouring cell ids for game managment
+ * 
+ * 
  * 3) Loop through all uncollapsed cells, reducing valid options as applicable
- *  3.1) Check clockwise, North, East, South, West, evaluating options reducing invalid entries
- *  3.2) Apply changes to options adding an updated `LevelCell` at the matching index within the `nextLevel` array
+ * 3) Check clockwise, North, East, South, West, evaluating options reducing invalid entries
+ * 3) Apply changes to options adding an updated `LevelCell` at the matching index within the `nextLevel` array
+ *
  * 4) Return level data after evaluations are complete
  * @param level Entire level storage array
  * @param DIM level storage Dimensions
@@ -1091,7 +1110,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
 
     cellPicked.collapsed = true;
     cellPicked.options = [randArrPos(cellPicked.options)];
-    cellPicked.connections = simpleRules[cellPicked.options[0]].Connections;
+    cellPicked.connections = simpleRules[cellPicked.options[0]].Connections.map(c => [...c]);
 
     for (const cData of cellPicked.connections){
         //let j = Math.floor(cellPicked.id / DIM);
@@ -1102,28 +1121,48 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 // i + (j - 1) * DIM
                 // j = Math.floor(cellPicked.id / DIM)
                 // i = cellPicked.id - DIM * j
-                cData[1] = cellPicked.id - DIM;
+                if (cellPicked.id > DIM) {
+                    cData[1] = cellPicked.id - DIM;
+                } else {
+                    cData[1] = -1;
+                }
+                //console.log(`Cell (ID: ${cellPicked.id}) North of collapsed: `, cData[1]);
                 // const cellAbove = level.find(c => c.id === cData[1]);
                 // if (cellAbove) console.log('Cell (ID: %d) North of collapsed: ', cellAbove.id, cellAbove);
             break;
             case "E":
                 // Look at tile to the right, push id
                 // i + 1 + j * DIM
-                cData[1] = cellPicked.id + 1;
+                if (cellPicked.id % DIM !== 0) {
+                    cData[1] = cellPicked.id + 1;
+                } else {
+                    cData[1] = -1;
+                }
+                //console.log(`Cell (ID: ${cellPicked.id}) East of collapsed: `, cData[1]);
                 // const cellRight = level.find(c => c.id === cData[1]);
                 // if (cellRight) console.log('Cell (ID: %d) East of collapsed: ', cellRight.id, cellRight);
             break;
             case "S":
                 // Look at tile below, push id
                 // i + (j + 1) * DIM
-                cData[1] = cellPicked.id + DIM;
+                if (cellPicked.id <= DIM * (DIM - 1)) {
+                    cData[1] = cellPicked.id + DIM;
+                } else {
+                    cData[1] = -1;
+                }
+                //console.log(`Cell (ID: ${cellPicked.id}) South of collapsed: `, cData[1]);
                 // const cellBelow = level.find(c => c.id === cData[1]);
                 // if (cellBelow) console.log('Cell (ID: %d) South of collapsed: ', cellBelow.id, cellBelow);
             break;
             case "W":
                 // Look at tile to the left, push id
                 // i - 1 + j * DIM
-                cData[1] = cellPicked.id - 1;
+                if ((cellPicked.id - 1) % DIM !== 0) {
+                    cData[1] = cellPicked.id - 1;
+                } else {
+                    cData[1] = -1;
+                }
+                //console.log(`Cell (ID: ${cellPicked.id}) West of collapsed: `, cData[1]);
                 // const cellLeft = level.find(c => c.id === cData[1]);
                 // if (cellLeft) console.log('Cell (ID: %d) West of collapsed: ', cellLeft.id, cellLeft);
             break;
@@ -1223,17 +1262,17 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
  * @returns Given level data converted to `RawTile` data as an array
  */
 export function convertToRawTiles(level: Array<LevelCell>) {
-    return level.map(cell => ({ id: cell.id, connections: cell.connections ?? [["", 0]] }));
+    return level.map(cell => ({ id: cell.id, connections: cell.connections ?? [["", 1]] }));
 }
 
 
 
 export function simplifiedLevelGenTest() {
-    const DIM = 4;
+    const DIM = 8;
 
     let level: Array<LevelCell> = Array.from([...new Array(DIM * DIM).fill(0)].map((_, idx, arr) => arr[idx] = new LevelCell(idx, undefined)));
 
-    console.log(level);
+    // console.log(level);
 
     let loopFor = DIM * DIM;
 
@@ -1245,5 +1284,5 @@ export function simplifiedLevelGenTest() {
         loopFor--;
     } while (loopFor > 0);
 
-    return level.map(cell => ({ id: cell.id, connections: cell.connections ?? [["", 0]] }));
+    return convertToRawTiles(level);
 }
