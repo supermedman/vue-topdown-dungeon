@@ -1019,9 +1019,17 @@ export class LevelCell {
     }
 };
 
+/**
+ * This function handles filtering out cell options given a lookup direction and valid connection state list 
+ * @param conTypes Passed as an array of "state" values as numbers
+ * @param availableOptions List of options modified during validation for each cell neigbour
+ * @param conDirect The direction currently being checked
+ * @returns List of valid options remaining after connection state filtering
+ */
 export function filterForConnection(conTypes: Array<number | RuleKey>, availableOptions: Array<RuleKey>, conDirect: string) {
     const oKeys = availableOptions;
 
+    // This is done to enforce the typing applied/viewed during filtering
     const filterKeys = conTypes.filter(t => typeof t === 'number');
 
     const validReturn: Array<RuleKey> = [];
@@ -1045,6 +1053,11 @@ export function filterForConnection(conTypes: Array<number | RuleKey>, available
     return validReturn;
 }
 
+/**
+ * This function modifies the given `optArr` to include only elements that are found within the given `validArr`
+ * @param optArr Current list of options modified by previous neigbour cell checks
+ * @param validArr List of all valid options after filtering
+ */
 export function validateOptions(optArr: Array<RuleKey>, validArr: Array<RuleKey | number>) {
     for (let i = optArr.length - 1; i >= 0; i--){
         let ele = optArr[i];
@@ -1054,6 +1067,19 @@ export function validateOptions(optArr: Array<RuleKey>, validArr: Array<RuleKey 
     }
 }
 
+/**
+ * This function handles the following in order:
+ * 
+ * 1) Collapse cell with lowest entropy selecting one style option as its state
+ * 2) Update Collapsed Cell's connection data array to include neigbouring cell ids for game managment
+ * 3) Loop through all uncollapsed cells, reducing valid options as applicable
+ *  3.1) Check clockwise, North, East, South, West, evaluating options reducing invalid entries
+ *  3.2) Apply changes to options adding an updated `LevelCell` at the matching index within the `nextLevel` array
+ * 4) Return level data after evaluations are complete
+ * @param level Entire level storage array
+ * @param DIM level storage Dimensions
+ * @returns Updated level storage array after one collapse cycle
+ */
 export function cellCycle(level: Array<LevelCell>, DIM: number) {
     let levelCopy = level.slice();
     levelCopy = levelCopy.filter(c => !c.collapsed);
@@ -1077,21 +1103,29 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                 // j = Math.floor(cellPicked.id / DIM)
                 // i = cellPicked.id - DIM * j
                 cData[1] = cellPicked.id - DIM;
+                // const cellAbove = level.find(c => c.id === cData[1]);
+                // if (cellAbove) console.log('Cell (ID: %d) North of collapsed: ', cellAbove.id, cellAbove);
             break;
             case "E":
                 // Look at tile to the right, push id
                 // i + 1 + j * DIM
                 cData[1] = cellPicked.id + 1;
+                // const cellRight = level.find(c => c.id === cData[1]);
+                // if (cellRight) console.log('Cell (ID: %d) East of collapsed: ', cellRight.id, cellRight);
             break;
             case "S":
                 // Look at tile below, push id
                 // i + (j + 1) * DIM
                 cData[1] = cellPicked.id + DIM;
+                // const cellBelow = level.find(c => c.id === cData[1]);
+                // if (cellBelow) console.log('Cell (ID: %d) South of collapsed: ', cellBelow.id, cellBelow);
             break;
             case "W":
                 // Look at tile to the left, push id
                 // i - 1 + j * DIM
                 cData[1] = cellPicked.id - 1;
+                // const cellLeft = level.find(c => c.id === cData[1]);
+                // if (cellLeft) console.log('Cell (ID: %d) West of collapsed: ', cellLeft.id, cellLeft);
             break;
         }
     }
@@ -1120,6 +1154,8 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                     validOptions = validOptions.concat(valid);
                 }
 
+                //console.log('I AM CELL %d Valid connection states NORTH: ', idx + 1, validOptions);
+
                 validOptions = filterForConnection(validOptions, options, "North");
 
                 validateOptions(options, validOptions);
@@ -1134,19 +1170,23 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                     validOptions = validOptions.concat(valid);
                 }
 
+                //console.log('I AM CELL %d Valid connection states EAST: ', idx + 1, validOptions);
+
                 validOptions = filterForConnection(validOptions, options, "East");
 
                 validateOptions(options, validOptions);
             }
 
             // SOUTH
-            if (j > DIM - 1) {
+            if (j < DIM - 1) {
                 const SOUTH = level[i + (j + 1) * DIM];
                 let validOptions: Array<number | RuleKey> = [];
                 for (let option of SOUTH.options){
                     let valid = simpleRules[option].North;
                     validOptions = validOptions.concat(valid);
                 }
+
+                //console.log('I AM CELL %d Valid connection states SOUTH: ', idx + 1, validOptions);
 
                 validOptions = filterForConnection(validOptions, options, "South");
 
@@ -1162,6 +1202,8 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
                     validOptions = validOptions.concat(valid);
                 }
 
+                //console.log('I AM CELL %d Valid connection states WEST: ', idx + 1, validOptions);
+
                 validOptions = filterForConnection(validOptions, options, "West");
 
                 validateOptions(options, validOptions);
@@ -1175,7 +1217,11 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
     return nextLevel;
 }
 
-
+/**
+ * This function is used to transform the level generation cell data into the base raw data needed for final map loading/rendering
+ * @param level Entire level storage array
+ * @returns Given level data converted to `RawTile` data as an array
+ */
 export function convertToRawTiles(level: Array<LevelCell>) {
     return level.map(cell => ({ id: cell.id, connections: cell.connections ?? [["", 0]] }));
 }
