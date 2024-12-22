@@ -1,5 +1,5 @@
 <script lang="ts">
-
+import lilDude from '../assets/pixil-frame-0.png';
 import { defineComponent } from 'vue';
 import { CellData } from '../typing/Tiles'; //  TileData, MapTile,  CellManager
 // import { getTypeOf } from '../utils/LogicHelpers';
@@ -181,9 +181,11 @@ export default defineComponent({
                         continue;
                     }
 
+                    let drawingActiveCell = false;
                     if (cell.activeCell){
                         // This is representing the players current position, defined by cell.activeCell
-                        ctx.fillStyle = 'green';
+                        drawingActiveCell = true;
+                        ctx.fillStyle = 'grey';
                     } else if (this.$props.blockedCells?.includes(cell) || this.$props.unknownCells?.includes(cell)){
                         // Cell is blocked, cannot be traversed, hide with FOG OF WAR
                         ctx.fillStyle = 'black';
@@ -202,7 +204,17 @@ export default defineComponent({
                         }
                     } else ctx.fillStyle = 'grey';
                     // Draw cell using decided colour
-                    ctx.fillRect(i * w, j * h, w, h);
+                    
+                    if (drawingActiveCell) {
+                        ctx.fillRect(i * w, j * h, w, h);
+                        
+                        const playerImage = new Image();
+                        playerImage.onload = (() => {
+                            ctx.drawImage(playerImage, i * w, j * h, w, h);
+                        });
+
+                        playerImage.src = lilDude;
+                    } else ctx.fillRect(i * w, j * h, w, h);
 
                     //console.log('Debug state: ', this.$props.debugMode);
 
