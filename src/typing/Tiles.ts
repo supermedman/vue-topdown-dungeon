@@ -406,6 +406,8 @@ export class CellManager {
     PURGE() {
         this.levelTiles = [];
         this.tiledCells = [];
+        this.encounteredCells = [];
+        this.reachableCells = [];
         this.activeTile = new MapTile(emptyTile);
     }
 }
