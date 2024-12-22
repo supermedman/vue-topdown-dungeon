@@ -36,7 +36,13 @@ export default defineComponent({
                 W: false
             },
             levelLoaded: false,
-            debugEnabled: false
+            debugEnabled: false,
+            debugStates: {
+                showConnectionStates: false,
+                showConnectionIDs: false,
+                showCellIDs: false,
+                showCellPathing: false
+            }
         }
     },
     created() {
@@ -83,10 +89,12 @@ export default defineComponent({
 
             const theMaker = new MakerMap({ dim: 8 });
 
-            console.log('Map Tiles Loaded: %d', this.mapController.populateBase(loadLevel(theMaker))); // createLevel({ dim: 4 })
+            console.log('Map Tiles Loaded: %d', this.mapController.populateBaseAdvanced(loadLevel, theMaker)); // createLevel({ dim: 4 })
             // this.mapController.debugTiles();
             // this.mapController.debugCells();
             console.log('Map Cells Loaded: %d', this.mapController.populateCells());
+
+            this.mapController.populateCellsAdvanced();
 
             // NEW
             this.activeTile = this.mapController.activeData;
@@ -205,6 +213,10 @@ export default defineComponent({
     :hidden="!levelLoaded" 
     :level-cells="watchedCells"
     :debug-mode="debugEnabled"
+    :de-cell-i-d-s="debugStates.showCellIDs"
+    :de-con-i-d-s="debugStates.showConnectionIDs"
+    :de-con-states="debugStates.showConnectionStates"
+    :de-cell-pathing="debugStates.showCellPathing"
     ></MapDisplay>
     <div class="game-state-controls">
         <button style="button" :disabled="levelLoaded" @click="loadLevel">Start!</button>
@@ -216,5 +228,13 @@ export default defineComponent({
         <button style="button" :disabled="!activeConnections.N" @click="move('N')">^</button>
         <button style="button" :disabled="!activeConnections.S" @click="move('S')">v</button>
         <button style="button" :disabled="!activeConnections.E" @click="move('E')">></button>
+    </div>
+    <div class="debug-state-controls">
+        <button style="button" :hidden="!debugEnabled" @click="debugStates.showCellIDs = !debugStates.showCellIDs">{{ (debugStates.showCellIDs) ? "Hide" : "Show" }} Cell IDs</button>
+        <button style="button" :hidden="!debugEnabled" @click="debugStates.showConnectionStates = !debugStates.showConnectionStates">{{ (debugStates.showConnectionStates) ? "Hide" : "Show" }} Con States</button>
+        <button style="button" :hidden="!debugEnabled" @click="debugStates.showConnectionIDs = !debugStates.showConnectionIDs">{{ (debugStates.showConnectionIDs) ? "Hide" : "Show" }} Con IDs</button>
+        <button style="button" :hidden="!debugEnabled" @click="debugStates.showCellPathing = !debugStates.showCellPathing">{{ (debugStates.showCellPathing) ? "Hide" : "Show" }} Cell Pathing</button>
+        <!--<button style="button" :hidden="!debugEnabled" @click="">{{ (debugStates.showCellIDs) ? "Hide" : "Show" }}</button>-->
+
     </div>
 </template>

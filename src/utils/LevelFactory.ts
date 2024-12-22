@@ -1204,7 +1204,7 @@ export function cellCycle(level: Array<LevelCell>, DIM: number) {
         }
     }
 
-    console.log('CELL COLLAPSED', cellPicked);
+    // console.log('CELL COLLAPSED', cellPicked);
 
     const nextLevel: Array<LevelCell> = [];
 

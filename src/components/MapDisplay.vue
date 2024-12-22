@@ -1,5 +1,6 @@
 <script lang="ts">
 
+import { defineComponent } from 'vue';
 import { CellData } from '../typing/Tiles'; //  TileData, MapTile,  CellManager
 // import { getTypeOf } from '../utils/LogicHelpers';
 
@@ -7,7 +8,7 @@ import { CellData } from '../typing/Tiles'; //  TileData, MapTile,  CellManager
 // const emptyTile = new TileData({ id: 0, connections: [["", 0]]});
 const emptyCell = new CellData({ id: 0, connections: [["", 0]]});
 
-export default {
+export default defineComponent({
     data() {
         return {
             gameMap: () => {
@@ -28,6 +29,18 @@ export default {
             type: Array<CellData>
         },
         debugMode: {
+            type: Boolean
+        },
+        deConIDS: {
+            type: Boolean
+        },
+        deConStates: {
+            type: Boolean
+        },
+        deCellIDS: {
+            type: Boolean
+        },
+        deCellPathing: {
             type: Boolean
         }
         // mapManager: {
@@ -58,7 +71,35 @@ export default {
             console.log('Debug state changed, attempting to render content...');
 
             this.renderGameMap();
-        }
+        },
+        deConIDS(newData: boolean, oldData: boolean){
+            if (newData === oldData) return;
+
+            console.log('Debug state changed, attempting to render content...');
+
+            this.renderGameMap();
+        },
+        deConStates(newData: boolean, oldData: boolean){
+            if (newData === oldData) return;
+
+            console.log('Debug state changed, attempting to render content...');
+
+            this.renderGameMap();
+        },
+        deCellIDS(newData: boolean, oldData: boolean){
+            if (newData === oldData) return;
+
+            console.log('Debug state changed, attempting to render content...');
+
+            this.renderGameMap();
+        },
+        deCellPathing(newData: boolean, oldData: boolean){
+            if (newData === oldData) return;
+
+            console.log('Debug state changed, attempting to render content...');
+
+            this.renderGameMap();
+        },
         // activeData(newData: MapTile, oldData: MapTile | null) {
         //     // console.log('DATA UPDATED IN MAPDISPLAY: ', newData);
         //     // console.log('Old data value: ', oldData);
@@ -204,13 +245,61 @@ export default {
                         continue;
                     }
 
+                    // ===================== DEBUGGING MODE =====================
+
+                    if (this.$props.deCellPathing && cell.hasContents && cell.pathing.length > 0) {
+                        console.log('Cell Pathing Enabled, current cell path: ', cell.pathing);
+                        ctx.fillStyle = 'blue';
+                        for (let p = 0; p < cell.pathing.length; p++){
+                            if (p > 0) ctx.fillStyle = 'red';
+                            const path = cell.pathing[p];
+                            const nextPath = cell.pathing[p + 1] ?? null;
+                            let pathOffset = p > 0 ? p - 1 : 0;
+                            if (path === nextPath - 1){
+                                // Draw East
+                                ctx.fillRect(
+                                    (cW * 1.5 + ((i + pathOffset) * w)), 
+                                    (cH * 1.5 + (j * h)),
+                                    (i - pathOffset) * w, 
+                                    cH
+                                );
+                            } else if (path === nextPath + 1){
+                                // Draw West
+                                ctx.fillRect(
+                                    (cW * 1.5 + ((i - pathOffset) * w)), 
+                                    (cH * 1.5 + (j * h)),
+                                    (i - pathOffset) * w, 
+                                    cH
+                                );
+                            } else if (nextPath - 1 < path) {
+                                // Draw North
+                                ctx.fillRect(
+                                    (cW * 1.5 + (i * w)), 
+                                    (cH * 1.5 + ((j - pathOffset) * h)),
+                                    cW, 
+                                    (j - pathOffset) * h
+                                );
+                            } else if (nextPath - 1 > path) {
+                                // Draw South
+                                ctx.fillRect(
+                                    (cW * 1.5 + (i * w)), 
+                                    (cH * 1.5 + ((j + pathOffset) * h)),
+                                    cW, 
+                                    (j + pathOffset) * h
+                                );
+                            } 
+                        }
+                    }
+
                     // Draw connectors as small red/green squares
                     // For each tile, draw each connection:
                     // If !dir red square, otherwise green square
 
-                    ctx.fillStyle = 'white';
-                    ctx.fillText(`${cell.id}`, cW * 1.5 + (i * w), cH * 1.8 + (j * h), cW);
-
+                    if (this.$props.deCellIDS) {
+                        ctx.fillStyle = 'white';
+                        ctx.fillText(`${cell.id}`, cW * 1.5 + (i * w), cH * 1.8 + (j * h), cW);
+                    }
+                    
                     for (const statDir of staticDirList){
                         ctx.fillStyle = (!connectedCellData.includes(statDir))
                         ? 'red'
@@ -218,31 +307,34 @@ export default {
 
                         const dirMatchID = cell.connections.filter(([dir,]) => dir === statDir)?.[0] ?? null;
                         
+                        const drawConIDs = this.$props.deConIDS;
+                        const drawCons = this.$props.deConStates;
+
                         switch(statDir){
                             case "N":
-                                ctx.fillRect(cW * 1.5 + (i * w), j * h, cW, cH);
-                                if (dirMatchID) {
+                                if (drawCons) ctx.fillRect(cW * 1.5 + (i * w), j * h, cW, cH);
+                                if (dirMatchID && drawConIDs) {
                                     ctx.fillStyle = 'black';
                                     ctx.fillText(`${dirMatchID[1]}`, cW * 1.5 + (i * w), j * h, cW);
                                 }
                             break;
                             case "E":
-                                ctx.fillRect(cW * 3 + (i * w), cH * 1.5 + (j * h), cW, cH);
-                                if (dirMatchID) {
+                                if (drawCons) ctx.fillRect(cW * 3 + (i * w), cH * 1.5 + (j * h), cW, cH);
+                                if (dirMatchID && drawConIDs) {
                                     ctx.fillStyle = 'black';
                                     ctx.fillText(`${dirMatchID[1]}`, cW * 3 + (i * w), cH * 1.5 + (j * h), cW);
                                 }
                             break;
                             case "S":
-                                ctx.fillRect(cW * 1.5 + (i * w), cH * 3 + (j * h), cW, cH);
-                                if (dirMatchID) {
+                                if (drawCons) ctx.fillRect(cW * 1.5 + (i * w), cH * 3 + (j * h), cW, cH);
+                                if (dirMatchID && drawConIDs) {
                                     ctx.fillStyle = 'black';
                                     ctx.fillText(`${dirMatchID[1]}`, cW * 1.5 + (i * w), cH * 3 + (j * h), cW);
                                 }
                             break;
                             case "W":
-                                ctx.fillRect(i * w, cH * 1.5 + (j * h), cW, cH);
-                                if (dirMatchID) {
+                                if (drawCons) ctx.fillRect(i * w, cH * 1.5 + (j * h), cW, cH);
+                                if (dirMatchID && drawConIDs) {
                                     ctx.fillStyle = 'black';
                                     ctx.fillText(`${dirMatchID[1]}`, i * w, cH * 1.5 + (j * h), cW);
                                 }
@@ -277,7 +369,7 @@ export default {
     mounted() {
         this.gameMap();
     },
-}
+});
 </script>
 
 <template>

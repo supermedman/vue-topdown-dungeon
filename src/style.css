@@ -67,6 +67,11 @@ canvas {
   bottom: 15%; top: 85%;
 }
 
+.debug-state-controls {
+  position: sticky;
+  bottom: 5%; top: 95%;
+}
+
 #app {
   max-width: 1280px;
   margin: 0 auto;
