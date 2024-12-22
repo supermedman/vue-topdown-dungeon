@@ -1,5 +1,7 @@
 <script lang="ts">
-import lilDude from '../assets/pixil-frame-0.png';
+import lilDude from '../assets/player.png';
+import pickup from '../assets/loot.png';
+import enemy from '../assets/enemy.png';
 import { defineComponent } from 'vue';
 import { CellData } from '../typing/Tiles'; //  TileData, MapTile,  CellManager
 // import { getTypeOf } from '../utils/LogicHelpers';
@@ -182,10 +184,16 @@ export default defineComponent({
                     }
 
                     let drawingActiveCell = false;
+                    let drawingPickup = false;
+                    let drawingEnemy = false;
                     if (cell.activeCell){
                         // This is representing the players current position, defined by cell.activeCell
-                        drawingActiveCell = true;
-                        ctx.fillStyle = 'grey';
+                        if (this.$props.debugMode) {
+                            ctx.fillStyle = 'green';
+                        } else {
+                            drawingActiveCell = true;
+                            ctx.fillStyle = 'grey';
+                        }
                     } else if (this.$props.blockedCells?.includes(cell) || this.$props.unknownCells?.includes(cell)){
                         // Cell is blocked, cannot be traversed, hide with FOG OF WAR
                         ctx.fillStyle = 'black';
@@ -193,10 +201,20 @@ export default defineComponent({
                         // Cell contains interactable element?
                         switch(cell.contents[0].type){
                             case 1:
-                                ctx.fillStyle = 'darkRed';
+                                if (this.$props.debugMode) {
+                                    ctx.fillStyle = 'darkred';
+                                    break;
+                                }
+                                ctx.fillStyle = 'grey';
+                                drawingEnemy = true;
                             break;
                             case 2:
-                                ctx.fillStyle = 'gold';
+                            if (this.$props.debugMode) {
+                                    ctx.fillStyle = 'gold';
+                                    break;
+                                }
+                                ctx.fillStyle = 'grey';
+                                drawingPickup = true;
                             break;
                             case 3:
                                 ctx.fillStyle = 'purple';
@@ -207,13 +225,31 @@ export default defineComponent({
                     
                     if (drawingActiveCell) {
                         ctx.fillRect(i * w, j * h, w, h);
-                        
+
                         const playerImage = new Image();
                         playerImage.onload = (() => {
                             ctx.drawImage(playerImage, i * w, j * h, w, h);
                         });
 
                         playerImage.src = lilDude;
+                    } else if (drawingPickup) {
+                        ctx.fillRect(i * w, j * h, w, h);
+
+                        const pickupImage = new Image();
+                        pickupImage.onload = (() => {
+                            ctx.drawImage(pickupImage, i * w, j * h, w, h);
+                        });
+
+                        pickupImage.src = pickup;
+                    } else if (drawingEnemy) {
+                        ctx.fillRect(i * w, j * h, w, h);
+
+                        const enemyImage = new Image();
+                        enemyImage.onload = (() => {
+                            ctx.drawImage(enemyImage, i * w, j * h, w, h);
+                        });
+
+                        enemyImage.src = enemy;
                     } else ctx.fillRect(i * w, j * h, w, h);
 
                     //console.log('Debug state: ', this.$props.debugMode);
