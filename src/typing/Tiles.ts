@@ -111,10 +111,12 @@ export class CellManager {
     activeTile: MapTile;
     tiledCells: Array<CellData>;
     reachableCells: Array<Con>;
+    encounteredCells: Array<Con>;
     constructor() { 
         this.levelTiles = [];
         this.tiledCells = [];
         this.reachableCells = [];
+        this.encounteredCells = [];
         this.activeTile = new MapTile(emptyTile);
     }
 
@@ -225,10 +227,20 @@ export class CellManager {
     }
 
     __updateActiveCell() {
+        // Setting all cells currently active to inactive
         if (this.tiledCells.filter(tile => tile.activeCell).length > 0) {
             this.tiledCells.filter(tile => tile.activeCell).forEach((cell) => cell.activeCell = false);
         }
+        // Setting newly activated cell to active
         (this.tiledCells.find(tile => tile.id === this.activeTile.id) ?? this.tiledCells[0]).activeCell = true;
+    
+        // Implement FOW based on newly activated cell
+        if (!this.activeTile) return;
+        
+        for (const con of this.activeTile.connections){
+            const cell = this.tiledCells.find(tile => tile.id === con[1]);
+            if (cell) this.encounteredCells.push(cell.id);
+        }
     }
 
     /**
@@ -314,176 +326,22 @@ export class CellManager {
         for (const cell of reachableCellsWithContents){
             checkShortestPath(cell);
         }
-
-
-        // const checkPathing = (targetCell: CellData) => {
-        //     const spawnTile = this.levelTiles.find(tile => tile.id === 1);
-            
-        //     const pathable = (targetCell: CellData) => {
-        //         // distance is created outside of the loop to ensure it is reset for each direction
-        //         let distance = 0;
-
-        //         console.log('Checking pathing for target cell: ', targetCell.id);
-                
-        //         for (const dir of spawnTile?.connections ?? []){
-        //             distance = 0;
-
-        //             const tilesChecked: Array<Con> = [1];
-
-        //             // Id of tile @ direction `dir`
-        //             let nextTile = dir[1];
-        //             while (!tilesChecked.includes(nextTile)){
-        //                 const nextTileData = this.levelTiles.find(tile => tile.id === nextTile);
-        //                 if (!nextTileData) break;
-                        
-        //                 //console.log('Next tile picked: ', nextTileData);
-                        
-        //                 // This entry is used as a "Way Back" for any failed pathing attempts made from it.
-        //                 tilesChecked.push(nextTile);
-
-        //                 //     Success Return
-        //                 // <S ================ R>
-        //                 // If the next cell checked contains a connection to the target cell, return the final distance + 1
-        //                 if ([...nextTileData.connections.map(conArr => conArr[1])].includes(targetCell.id)) {
-        //                     distance++;
-        //                     return distance;
-        //                 }
-        //                 // <S ================ R>
-                        
-        //                 // Continue pathing if target cell is not included
-
-        //                 // This logic needs to be expanded, currently it checks only 1 random connection, however it should instead try each connection
-        //                 nextTile = randArrPos(nextTileData.connections.filter(conArr => !tilesChecked.includes(conArr[1])))?.[1] ?? 0;
-                        
-        //                 if (nextTile === 0) break;
-        //                 distance++;
-        //             }
-
-        //             /**
-        //              * This function is used to check all connections of the current tile, allowing a more robust pathing system to check all possible options
-        //              * @param nextTileData "Save-State" of the starting tile for the current sub-path
-        //              * @returns All connections that have not been checked yet
-        //              */
-        //             const populateSubPath = (nextTileData: TileData) => {
-        //                 return nextTileData.connections.filter(conArr => !tilesChecked.includes(conArr[1]));
-        //             };
-
-        //             let pathPieceCollector = Array.from(tilesChecked);
-        //             // This is used to splice failed pathing attempts, set initially to remove all but tile 1
-        //             // let currentPathLength = pathPieceCollector.length - 1;
-
-        //             //console.log('Initial pathing attempt:', pathPieceCollector);
-
-        //             // If the initial pathing attempt failed, backtrack through each tile checked, itterating through all possible options 
-        //             // until the target cell is found or all options are exhausted
-        //             for (let i = tilesChecked.length - 1; i >= 0; i--){
-        //                 const tile = this.levelTiles.find(tile => tile.id === tilesChecked[i]);
-        //                 if (!tile) continue;
-
-        //                 // Extract the sub-path for the current tile
-        //                 const subPath = populateSubPath(tile);
-        //                 // If tile was already exhausted, skip to next
-        //                 if (!subPath.length) { 
-        //                     // More logic is required to remove the correct number of path Pieces
-        //                     // console.log('Following initial pathing attempt?', pathPieceCollector[i] === tilesChecked[i]);
-        //                     const pathPieceIndex = pathPieceCollector.indexOf(tilesChecked[i]);
-        //                     if (pathPieceIndex < 0) continue;
-        //                     pathPieceCollector = pathPieceCollector.slice(0, pathPieceIndex);
-        //                     //console.log('Pathing attempt failed removed pathing attempt, updated path: ', pathPieceCollector);
-        //                     continue; 
-        //                 } 
-
-        //                 //console.log('Checking Backwards pathing for: ', tile);
-
-        //                 // Add the currently checked tile to the full path checked
-        //                 if (!pathPieceCollector.includes(tile.id)) {
-        //                     //console.log('Adding tile to pathing attempt: ', tile.id);
-        //                     pathPieceCollector.push(tile.id);
-        //                 }
-
-        //                 if (subPath.flat(1).includes(targetCell.id)) {
-        //                     // console.log('Found target cell in sub-path options');
-        //                     // Work backwards using the pathPieceCollector to construct a valid path
-        //                     for (const idStep of pathPieceCollector.slice().reverse()){
-        //                         const currentStep = this.levelTiles.find(tile => tile.id === idStep);
-        //                         const currentStepIndex = pathPieceCollector.indexOf(idStep);
-        //                         if (!currentStep || currentStepIndex < 0) continue;
-                                
-        //                         let previousStepIndex = currentStepIndex - 1;
-        //                         while (!currentStep.connections.map(conArr => conArr[1]).includes(pathPieceCollector[previousStepIndex]) && previousStepIndex >= 0) {
-        //                             pathPieceCollector.splice(previousStepIndex, 1, 0);
-        //                             previousStepIndex--;
-        //                         }
-        //                     }
-
-        //                     pathPieceCollector = pathPieceCollector.filter(id => id !== 0);
-
-        //                     console.log('Full path completed, after validation: ', pathPieceCollector);
-
-        //                     // Using tilesChecked instead of pathPieceCollector attempting to resolve the correct pathing
-        //                     // THIS DOESNT WORK VVV
-        //                     // for (const idStep of tilesChecked){
-        //                     //     const currentStep = this.levelTiles.find(tile => tile.id === idStep);
-        //                     //     const currentStepIndex = tilesChecked.indexOf(idStep);
-        //                     //     if (!currentStep || currentStepIndex < 0) continue;
-                                
-        //                     //     let nextStepIndex = currentStepIndex + 1;
-        //                     //     while (!currentStep.connections.map(conArr => conArr[1]).includes(tilesChecked[nextStepIndex]) && nextStepIndex <= tilesChecked.length - 1) {
-        //                     //         tilesChecked.splice(nextStepIndex, 1, 0);
-        //                     //         nextStepIndex++;
-        //                     //     }
-        //                     // }
-
-        //                     // const finalPath = tilesChecked.filter(id => id !== 0);
-
-        //                     // console.log('Full path completed (Using data in tilesChecked), after validation: ', finalPath);
-
-        //                     return distance + 1;
-        //                 }
-
-        //                 //console.log('Current pathing attempt:', pathPieceCollector);
-
-        //                 for (const con of subPath) {
-        //                     // console.log('Checking sub-path options for: ', con);
-        //                     const nextSubTile = this.levelTiles.find(tile => tile.id === con[1]);
-        //                     if (!nextSubTile) continue;
-
-        //                     // console.log(`i: %d, Tiles backchecked: ${(tilesChecked.length - 1) - i}`, i);
-
-        //                     // We want to add the nextSubTile to the original tilesChecked array
-        //                     // This is done by splicing the array at the current index, inserting nextSubTile.id, and then pushing all elements after it
-        //                     // back into the array
-        //                     tilesChecked.push(...tilesChecked.splice(i, (tilesChecked.length - 1) - i, nextSubTile.id));
-                            
-        //                     // !! IMPORTANT !!
-        //                     // Increment i as the length of the array has been modified
-        //                     i++;
-        //                     // console.log('Contents of tilesChecked after splice: ', tilesChecked);
-        //                 }
-        //             }
-        //         }
-
-        //         // If this return is reached the target cell was never found
-        //         return 0;
-        //     };
-
-        //     // Evaluate the pathing distance for the target cell
-        //     const pathDistance = pathable(targetCell);
-        //     if (pathDistance <= 0) {
-        //         console.log('Target Cell %d is unreachable from spawn tile', targetCell.id);
-        //     } else {
-        //         console.log(`Target Cell ${targetCell.id} is reachable from spawn tile at distance: ${pathDistance}`);
-        //     }
-        // };
-
-        // const cellsWithContents = this.tiledCells.filter(cell => cell.hasContents);
-        // for (const cell of cellsWithContents){
-        //     checkPathing(cell);
-        // }
     };
 
     get cells() {
         return this.tiledCells;
+    }
+
+    get reachable() {
+        return this.reachableCells;
+    }
+
+    get unreachable() {
+        return this.tiledCells.filter(cell => !this.reachableCells.includes(cell.id));
+    }
+
+    get unknown() {
+        return this.tiledCells.filter(cell => this.reachableCells.includes(cell.id) && !this.encounteredCells.includes(cell.id));
     }
 
     get activeData() {

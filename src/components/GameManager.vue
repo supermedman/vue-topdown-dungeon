@@ -28,6 +28,8 @@ export default defineComponent({
             tiles: [...level_one.map(l => new TileData(l))],
             mapController: new CellManager(),
             watchedCells: [emptyCell],
+            unreachableCells: [emptyCell],
+            hiddenCells: [emptyCell],
             activeTile: emptyTile,
             activeConnections: {
                 N: false,
@@ -168,6 +170,8 @@ export default defineComponent({
             );
 
             this.watchedCells = [...this.mapController.cells];
+            this.unreachableCells = [...this.mapController.unreachable];
+            this.hiddenCells = [...this.mapController.unknown];
 
             // OLD
             // if (!this.activeTile) return console.warn('Level is not loaded!');
@@ -209,19 +213,32 @@ export default defineComponent({
     :map-manager="mapController" 
 -->
 <template>
-    <MapDisplay 
-    :hidden="!levelLoaded" 
-    :level-cells="watchedCells"
-    :debug-mode="debugEnabled"
-    :de-cell-i-d-s="debugStates.showCellIDs"
-    :de-con-i-d-s="debugStates.showConnectionIDs"
-    :de-con-states="debugStates.showConnectionStates"
-    :de-cell-pathing="debugStates.showCellPathing"
-    ></MapDisplay>
+    <div class="game-container">
+        <div class="left-map-ui">
+            <button style="button" :disabled="levelLoaded" @click="loadLevel">Start!</button>
+            <button style="button" :disabled="!levelLoaded" @click="resetLevel">Reset!</button>
+        </div>
+        <div id="canvas-holder">
+            <MapDisplay 
+            :hidden="!levelLoaded" 
+            :level-cells="watchedCells"
+            :blocked-cells="unreachableCells"
+            :unknown-cells="hiddenCells"
+            :debug-mode="debugEnabled"
+            :de-cell-i-d-s="debugStates.showCellIDs"
+            :de-con-i-d-s="debugStates.showConnectionIDs"
+            :de-con-states="debugStates.showConnectionStates"
+            :de-cell-pathing="debugStates.showCellPathing"
+            ></MapDisplay>
+        </div>
+        <div class="right-map-ui">
+            <button style="button" @click="debugEnabled = !debugEnabled">Toggle Debug</button>
+        </div>
+    </div>
     <div class="game-state-controls">
-        <button style="button" :disabled="levelLoaded" @click="loadLevel">Start!</button>
-        <button style="button" :disabled="!levelLoaded" @click="resetLevel">Reset!</button>
-        <button style="button" @click="debugEnabled = !debugEnabled">Toggle Debug</button>
+        <!-- <button style="button" :disabled="levelLoaded" @click="loadLevel">Start!</button>
+        <button style="button" :disabled="!levelLoaded" @click="resetLevel">Reset!</button> -->
+        <!-- <button style="button" @click="debugEnabled = !debugEnabled">Toggle Debug</button> -->
         <!--<button style="button" @click="testFn">GEN LEVEL</button>-->
         
         <button style="button" :disabled="!activeConnections.W" @click="move('W')"><</button>

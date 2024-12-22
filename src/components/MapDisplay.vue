@@ -15,6 +15,8 @@ export default defineComponent({
                 return document.querySelector("canvas");
             },
             cellStorage: [emptyCell],
+            unreachableCells: [emptyCell],
+            hiddenCells: [emptyCell],
             // storedCells: (newData: Array<TileData>, activeID?: number) => {
             //     const newlyMappedData = [...newData.map(t => new CellData(t))];
             //     if (activeID) {
@@ -26,6 +28,12 @@ export default defineComponent({
     },
     props: {
         levelCells: {
+            type: Array<CellData>
+        },
+        blockedCells: {
+            type: Array<CellData>
+        },
+        unknownCells: {
             type: Array<CellData>
         },
         debugMode: {
@@ -62,6 +70,28 @@ export default defineComponent({
             this.cellStorage = this.$props.levelCells ?? [emptyCell];
 
             console.log('CellData updated, attempting to render content...');
+
+            this.renderGameMap();
+        },
+        blockedCells(newData: Array<CellData>, oldData: Array<CellData>) {
+            if (!newData.length || newData === oldData) return;
+
+            console.log('Blocked CellData contents changed, attempting to update stored data...');
+            
+            this.unreachableCells = this.$props.blockedCells ?? [emptyCell];
+
+            console.log('Blocked CellData updated, attempting to render content...');
+
+            this.renderGameMap();
+        },
+        unknownCells(newData: Array<CellData>, oldData: Array<CellData>) {
+            if (!newData.length || newData === oldData) return;
+
+            console.log('Unknown CellData contents changed, attempting to update stored data...');
+            
+            this.hiddenCells = this.$props.unknownCells ?? [emptyCell];
+
+            console.log('Unknown CellData updated, attempting to render content...');
 
             this.renderGameMap();
         },
@@ -154,6 +184,9 @@ export default defineComponent({
                     if (cell.activeCell){
                         // This is representing the players current position, defined by cell.activeCell
                         ctx.fillStyle = 'green';
+                    } else if (this.$props.blockedCells?.includes(cell) || this.$props.unknownCells?.includes(cell)){
+                        // Cell is blocked, cannot be traversed, hide with FOG OF WAR
+                        ctx.fillStyle = 'black';
                     } else if (cell.hasContents && cell.contents[0]) {
                         // Cell contains interactable element?
                         switch(cell.contents[0].type){
@@ -247,45 +280,65 @@ export default defineComponent({
 
                     // ===================== DEBUGGING MODE =====================
 
+
+                    // Debugging cell pathing data using a coloured overlay
+                    // Display is currently dysfunctional, pathing logic is not.
                     if (this.$props.deCellPathing && cell.hasContents && cell.pathing.length > 0) {
                         console.log('Cell Pathing Enabled, current cell path: ', cell.pathing);
-                        ctx.fillStyle = 'blue';
+                        
+                        // pathOffsetTracker: (Alias) pathOffT
+                        const pathOffT = {
+                            px: i,
+                            py: j
+                        };
+
                         for (let p = 0; p < cell.pathing.length; p++){
-                            if (p > 0) ctx.fillStyle = 'red';
+                            //if (p > 0) 
                             const path = cell.pathing[p];
                             const nextPath = cell.pathing[p + 1] ?? null;
-                            let pathOffset = p > 0 ? p - 1 : 0;
+
+                            // let pathOffset = p > 0 ? p - 1 : 0;
+
                             if (path === nextPath - 1){
+                                ctx.fillStyle = 'blue';
                                 // Draw East
+                                pathOffT.px++;
+                                // Draw starting at one tile to the east, backwards to the current tile position
                                 ctx.fillRect(
-                                    (cW * 1.5 + ((i + pathOffset) * w)), 
-                                    (cH * 1.5 + (j * h)),
-                                    (i - pathOffset) * w, 
+                                    (cW * 1.5 + (pathOffT.px * w)), 
+                                    (cH * 1.5 + (pathOffT.py * h)),
+                                    (pathOffT.px - p) - 1 * cW, 
                                     cH
                                 );
                             } else if (path === nextPath + 1){
+                                ctx.fillStyle = 'red';
                                 // Draw West
+                                pathOffT.px--;
                                 ctx.fillRect(
-                                    (cW * 1.5 + ((i - pathOffset) * w)), 
-                                    (cH * 1.5 + (j * h)),
-                                    (i - pathOffset) * w, 
+                                    (cW * 1.5 + (pathOffT.px * w)), 
+                                    (cH * 1.5 + (pathOffT.py * h)),
+                                    (pathOffT.px - p) + 1 * cW, 
                                     cH
                                 );
                             } else if (nextPath - 1 < path) {
+                                ctx.fillStyle = 'orange';
                                 // Draw North
+                                pathOffT.py++;
                                 ctx.fillRect(
-                                    (cW * 1.5 + (i * w)), 
-                                    (cH * 1.5 + ((j - pathOffset) * h)),
+                                    (cW * 1.5 + (pathOffT.px * w)), 
+                                    (cH * 1.5 + (pathOffT.py * h)),
                                     cW, 
-                                    (j - pathOffset) * h
+                                    (pathOffT.py - p) - 1 * cH
                                 );
                             } else if (nextPath - 1 > path) {
+                                ctx.fillStyle = 'purple';
                                 // Draw South
+                                pathOffT.py++;
                                 ctx.fillRect(
-                                    (cW * 1.5 + (i * w)), 
-                                    (cH * 1.5 + ((j + pathOffset) * h)),
+                                    (cW * 1.5 + (pathOffT.px * w)), 
+                                    (cH * 1.5 + (pathOffT.py * h)),
                                     cW, 
-                                    (j + pathOffset) * h
+                                    (pathOffT.py - p) + 1 * cH
                                 );
                             } 
                         }
