@@ -7,9 +7,7 @@ export default defineComponent({
 });
 </script>
 
-<!--
-TODO
-
+<!-- TODO STYLE
 - Add more styling?
 -->
 

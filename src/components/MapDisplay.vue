@@ -10,7 +10,7 @@ import { CellData } from '../typing/Tiles'; //  TileData, MapTile,  CellManager
 // const emptyTile = new TileData({ id: 0, connections: [["", 0]]});
 const emptyCell = new CellData({ id: 0, connections: [["", 0]]});
 
-/** TODO
+/** TODO PERFORMANCE
  *  - Continue cleaning rendering cycles
  *  - Refactor where possible
  *  - Turn draw cycle into function segments?

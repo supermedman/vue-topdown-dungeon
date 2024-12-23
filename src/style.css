@@ -95,6 +95,13 @@ div.left-map-ui, div.right-map-ui {
   justify-content: flex-start;
 }
 
+#level-gen-options {
+  display: flex;
+  width: fit-content;
+  flex-wrap: wrap;
+  place-items: column space-between;
+}
+
 .card {
   padding: 2em;
 }

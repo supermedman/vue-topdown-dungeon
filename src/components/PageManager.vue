@@ -21,9 +21,7 @@ export default defineComponent({
 });
 </script>
 
-<!--
-TODO
-
+<!-- TODO PAGES
 - Add second and third pages
 - Second page: Task management
 - Third page: Stats?

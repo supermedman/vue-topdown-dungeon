@@ -1,7 +1,7 @@
 import { MakerMap } from "../utils/LevelFactory";
 import { randArrPos, rollChanceLTE } from "../utils/LogicHelpers";
 
-/** TODO
+/** TODO CELLS
  * 
  * 
  *  - Add connection Direction data when constructing pathing 

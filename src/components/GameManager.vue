@@ -19,7 +19,8 @@ type ActiveCon = {
     W: boolean
 };
 
-/** TODO
+/** TODO CELLS + UI
+ *  - Add Level Generation Options UI
  *  - Add "Interaction" component handlers for cells with contents
  *  - Add content flow for each type of content "Interaction"
  *      - Enemy
@@ -45,6 +46,13 @@ export default defineComponent({
                 E: false,
                 S: false,
                 W: false
+            },
+            mapMakerContainer: {
+                dimensions: 8,
+                /* 
+                    TODO: add additional user options for how a level will attempt 
+                    to generate
+                */
             },
             levelLoaded: false,
             debugEnabled: false,
@@ -94,11 +102,11 @@ export default defineComponent({
         });
     },
     methods: {
-        loadLevel(){
+        loadLevel(dimArgs: number){
             if (!this.levelLoaded) this.levelLoaded = true;
             else return;
 
-            const theMaker = new MakerMap({ dim: 8 });
+            const theMaker = new MakerMap({ dim: dimArgs });
 
             this.mapController.populateBaseAdvanced(loadLevel, theMaker);
             this.mapController.populateCells();
@@ -184,7 +192,7 @@ export default defineComponent({
     </div>
     <div class="game-container">
         <div class="left-map-ui">
-            <button style="button" :disabled="levelLoaded" @click="loadLevel">Start!</button>
+            <button style="button" :disabled="levelLoaded" @click="loadLevel(mapMakerContainer.dimensions)">Start!</button>
             <button style="button" :disabled="!levelLoaded" @click="resetLevel">Reset!</button>
         </div>
         <div id="canvas-holder">
@@ -199,6 +207,32 @@ export default defineComponent({
             :de-con-states="debugStates.showConnectionStates"
             :de-cell-pathing="debugStates.showCellPathing"
             ></MapDisplay>
+            <div id="level-gen-options">
+                <div :hidden="levelLoaded">
+                    <input type="radio" id="dimOne" name="dimOption" :value="8" checked
+                    v-model.number="mapMakerContainer.dimensions"
+                    />
+                    <label for="dimOne">8x8</label>
+                </div>
+                <div :hidden="levelLoaded">
+                    <input type="radio" id="dimTwo" name="dimOption" :value="10" 
+                    v-model.number="mapMakerContainer.dimensions"
+                    />
+                    <label for="dimTwo">10x10</label>
+                </div>
+                <div :hidden="levelLoaded">
+                    <input type="radio" id="dimThree" name="dimOption" :value="12" 
+                    v-model.number="mapMakerContainer.dimensions"
+                    />
+                    <label for="dimThree">12x12</label>
+                </div>
+                <div :hidden="levelLoaded">
+                    <input type="radio" id="dimFour" name="dimOption" :value="16" 
+                    v-model.number="mapMakerContainer.dimensions"
+                    />
+                    <label for="dimFour">16x16</label>
+                </div>
+            </div>
         </div>
         <div class="right-map-ui">
             <button style="button" @click="debugEnabled = !debugEnabled">Toggle Debug</button>
