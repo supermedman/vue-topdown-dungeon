@@ -19,9 +19,7 @@ type ActiveCon = {
     W: boolean
 };
 
-/**
- * TODO
- * 
+/** TODO
  *  - Add "Interaction" component handlers for cells with contents
  *  - Add content flow for each type of content "Interaction"
  *      - Enemy
