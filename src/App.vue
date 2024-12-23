@@ -1,6 +1,6 @@
 <script setup lang="ts">
-//import HelloWorld from './components/HelloWorld.vue'
-import GameManager from './components/GameManager.vue'
+import PageManager from './components/PageManager.vue';
+//import GameManager from './components/GameManager.vue'
 // import LevelTesting from './components/LevelTesting.vue';
 </script>
 
@@ -19,7 +19,7 @@ import GameManager from './components/GameManager.vue'
 -->
 
 <template>
-  <GameManager></GameManager>
+  <PageManager></PageManager>
 </template>
 
 <style scoped>

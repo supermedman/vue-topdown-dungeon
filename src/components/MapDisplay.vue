@@ -67,33 +67,35 @@ export default defineComponent({
         levelCells(newData: Array<CellData>, oldData: Array<CellData>) {
             if (!newData.length || newData === oldData) return;
 
-            console.log('CellData contents changed, attempting to update stored data...');
+            //console.log('CellData contents changed, attempting to update stored data...');
             
             this.cellStorage = this.$props.levelCells ?? [emptyCell];
 
-            console.log('CellData updated, attempting to render content...');
+            //console.log('CellData updated, attempting to render content...');
 
             this.renderGameMap();
         },
         blockedCells(newData: Array<CellData>, oldData: Array<CellData>) {
             if (!newData.length || newData === oldData) return;
 
-            console.log('Blocked CellData contents changed, attempting to update stored data...');
+            //console.log('Blocked CellData contents changed, attempting to update stored data...');
             
             this.unreachableCells = this.$props.blockedCells ?? [emptyCell];
 
-            console.log('Blocked CellData updated, attempting to render content...');
+            //console.log('Blocked CellData updated, attempting to render content...');
 
-            this.renderGameMap();
+            // Rendering the canvas after this is changed has no benefit and wastes resources
+            // This is will be changed when blocked paths can be opened
+            // this.renderGameMap();
         },
         unknownCells(newData: Array<CellData>, oldData: Array<CellData>) {
             if (!newData.length || newData === oldData) return;
 
-            console.log('Unknown CellData contents changed, attempting to update stored data...');
+            //console.log('Unknown CellData contents changed, attempting to update stored data...');
             
             this.hiddenCells = this.$props.unknownCells ?? [emptyCell];
 
-            console.log('Unknown CellData updated, attempting to render content...');
+            //console.log('Unknown CellData updated, attempting to render content...');
 
             this.renderGameMap();
         },
@@ -157,6 +159,8 @@ export default defineComponent({
             : undefined;
             if (!ctx || !c) return;
 
+            const start = new Date().getTime();
+
             // console.log(this.$props.levelData?.length);
 
             // The Dimensions of our level are defined by the total tile count / 2
@@ -167,7 +171,7 @@ export default defineComponent({
             const h = c.height / DIM;
             const w = c.width / DIM;
 
-            console.log(`Current canvas grid dimensions: DIM:${DIM} H:${h}, W:${w}`);
+            // console.log(`Current canvas grid dimensions: DIM:${DIM} H:${h}, W:${w}`);
 
             // Retrieving level data, or anything thats been passed down to this component from the game manager
             // this.cellStorage = this.$props.mapManager?.tiledCells ?? [emptyCell];
@@ -465,6 +469,8 @@ export default defineComponent({
                     idTrack++;
                 }
             }
+
+            console.info(`Render Cycle took ${new Date().getTime() - start}ms to complete`);
         }
     },
     mounted() {

@@ -20,6 +20,7 @@ type ActiveCon = {
 };
 
 export default defineComponent({
+    emits: ['changePage'],
     components: {
         MapDisplay
     },
@@ -91,10 +92,13 @@ export default defineComponent({
 
             const theMaker = new MakerMap({ dim: 8 });
 
-            console.log('Map Tiles Loaded: %d', this.mapController.populateBaseAdvanced(loadLevel, theMaker)); // createLevel({ dim: 4 })
+            this.mapController.populateBaseAdvanced(loadLevel, theMaker);
+            this.mapController.populateCells();
+
+            //console.log('Map Tiles Loaded: %d', this.mapController.populateBaseAdvanced(loadLevel, theMaker)); // createLevel({ dim: 4 })
             // this.mapController.debugTiles();
             // this.mapController.debugCells();
-            console.log('Map Cells Loaded: %d', this.mapController.populateCells());
+            //console.log('Map Cells Loaded: %d', this.mapController.populateCells());
 
             this.mapController.populateCellsAdvanced();
 
@@ -161,13 +165,13 @@ export default defineComponent({
             //     return acc;
             // }, {});
 
-            console.log(
-                'After connections cleared and updated: \nN: %s \nE: %s \nS: %s \nW: %s', 
-                this.activeConnections.N,
-                this.activeConnections.E,
-                this.activeConnections.S,
-                this.activeConnections.W
-            );
+            // console.log(
+            //     'After connections cleared and updated: \nN: %s \nE: %s \nS: %s \nW: %s', 
+            //     this.activeConnections.N,
+            //     this.activeConnections.E,
+            //     this.activeConnections.S,
+            //     this.activeConnections.W
+            // );
 
             this.watchedCells = [...this.mapController.cells];
             this.unreachableCells = [...this.mapController.unreachable];
@@ -213,6 +217,9 @@ export default defineComponent({
     :map-manager="mapController" 
 -->
 <template>
+    <div class="home-button">
+        <button @click="$emit('changePage', 'HomePage')">Return to Mainmenu</button>
+    </div>
     <div class="game-container">
         <div class="left-map-ui">
             <button style="button" :disabled="levelLoaded" @click="loadLevel">Start!</button>

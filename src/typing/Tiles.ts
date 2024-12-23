@@ -317,12 +317,12 @@ export class CellManager {
                 failSafe--;
             }
 
-            console.log('Pathing for cell %d: ', targetCell.id, path);
+            // console.log('Pathing for cell %d: ', targetCell.id, path);
             targetCell.fillPathway(path);
         };
 
         const reachableCellsWithContents = this.tiledCells.filter(cell => cell.hasContents && this.reachableCells.includes(cell.id));
-        console.log('Reachable Cells with contents: ', reachableCellsWithContents);
+        // console.log('Reachable Cells with contents: ', reachableCellsWithContents);
         for (const cell of reachableCellsWithContents){
             checkShortestPath(cell);
         }
