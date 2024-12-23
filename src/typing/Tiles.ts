@@ -1,6 +1,16 @@
 import { MakerMap } from "../utils/LevelFactory";
 import { randArrPos, rollChanceLTE } from "../utils/LogicHelpers";
 
+/**
+ * TODO
+ * 
+ *  - Add connection Direction data when constructing pathing 
+ *  - Clean up classes removing any extrenus code
+ *  - Prepare Cells for contents handling and updates
+ *  - Reduce general size of classes
+ */
+// ====
+
 type Mapish = { [k: string]: boolean };
 export type Con = keyof Mapish;
 

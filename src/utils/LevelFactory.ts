@@ -2,6 +2,15 @@
 import { Con, RawTile } from "../typing/Tiles";
 import { randArrPos } from "./LogicHelpers";
 
+/**
+ * TODO
+ * 
+ *  - Clean 90% of existing code
+ *  - Comment currently used code 
+ *  - Prepare UI for level gen options/rules
+ */
+// ====
+
 interface LevelArgs {
     dim?: number;
     width?: number;
