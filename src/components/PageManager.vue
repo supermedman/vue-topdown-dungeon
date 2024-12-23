@@ -21,6 +21,14 @@ export default defineComponent({
 });
 </script>
 
+<!--
+TODO
+
+- Add second and third pages
+- Second page: Task management
+- Third page: Stats?
+-->
+
 <template>
     <component :is="activePage" @change-page="updateActivePage($event)"></component>
 </template>

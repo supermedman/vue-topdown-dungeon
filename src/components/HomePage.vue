@@ -7,6 +7,12 @@ export default defineComponent({
 });
 </script>
 
+<!--
+TODO
+
+- Add more styling?
+-->
+
 <template>
     <div>
         <h1>Dungeons of Fayrn</h1>

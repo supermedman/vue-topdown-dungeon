@@ -19,6 +19,16 @@ type ActiveCon = {
     W: boolean
 };
 
+/**
+ * TODO
+ * 
+ *  - Add "Interaction" component handlers for cells with contents
+ *  - Add content flow for each type of content "Interaction"
+ *      - Enemy
+ *      - Item
+ *      - Event
+ */
+
 export default defineComponent({
     emits: ['changePage'],
     components: {
@@ -102,9 +112,7 @@ export default defineComponent({
 
             this.mapController.populateCellsAdvanced();
 
-            // NEW
             this.activeTile = this.mapController.activeData;
-            // NEW
             this.updateMoveState();
         },
         resetLevel(){
@@ -117,19 +125,11 @@ export default defineComponent({
             this.clearActiveConnections();
         },
         move(direction: string){
-            // NEW
             this.mapController.handleMovement(direction);
 
             this.activeTile = this.mapController.activeData;
-            // NEW
-
-            // OLD
-            // const nextTileID = this.activeTile.moveDirectionsID(direction);
-
-            // this.activeTile = new MapTile(this.tiles.find(t => t.id === nextTileID) ?? emptyTile);
-
+            
             this.updateMoveState();
-            // OLD
         },
         clearActiveConnections() {
             this.activeConnections.N = false;
@@ -140,7 +140,6 @@ export default defineComponent({
         updateMoveState(){
             if (!this.mapController || this.mapController.levelTiles.length <= 0) return console.warn('Level is not loaded!');
             
-            //const movementFilter = (k: string) => this.mapController.activeTile?.enabledConnections().some((d) => k === d);
             const movementFilter = this.mapController.filterMovement();
             
             // console.log('Before connections cleared and updated: ', this.activeConnections);
@@ -158,13 +157,6 @@ export default defineComponent({
                 if (movementFilter(statDir)) this.activeConnections[statDir] = true;
             }
 
-            // Object.entries(this.activeConnections)
-            // .filter(([k,]) => movementFilter(k))
-            // .reduce((acc, [k,]) => {
-            //     this.activeConnections[k] = true;
-            //     return acc;
-            // }, {});
-
             // console.log(
             //     'After connections cleared and updated: \nN: %s \nE: %s \nS: %s \nW: %s', 
             //     this.activeConnections.N,
@@ -176,27 +168,6 @@ export default defineComponent({
             this.watchedCells = [...this.mapController.cells];
             this.unreachableCells = [...this.mapController.unreachable];
             this.hiddenCells = [...this.mapController.unknown];
-
-            // OLD
-            // if (!this.activeTile) return console.warn('Level is not loaded!');
-
-            // console.log(this.activeTile);
-
-            // const canMoveTo = (k: string) => this.activeTile.enabledConnections().some((d) => k === d);
-
-            // console.log('Before connections cleared and updated: ', this.activeConnections);
-
-            // this.clearActiveConnections();
-
-            // Object.entries(this.activeConnections)
-            // .filter(([k,]) => canMoveTo(k))
-            // .reduce((acc, [k,]) => {
-            //     this.activeConnections[k] = true;
-            //     return acc;
-            // }, {});
-
-            // console.log('After connections cleared and updated: ', this.activeConnections);
-            // OLD
         },
         testFn() {
             createLevel({ dim: 4 });
@@ -209,13 +180,6 @@ export default defineComponent({
 })
 </script>
 
-<!--<span :hidden="!levelLoaded" v-for="tile in tiles">{{ tile.connections }}</span>-->
-
-<!-- 
-:active-data="activeTile" 
-    :level-data="tiles" 
-    :map-manager="mapController" 
--->
 <template>
     <div class="home-button">
         <button @click="$emit('changePage', 'HomePage')">Return to Mainmenu</button>
@@ -243,11 +207,6 @@ export default defineComponent({
         </div>
     </div>
     <div class="game-state-controls">
-        <!-- <button style="button" :disabled="levelLoaded" @click="loadLevel">Start!</button>
-        <button style="button" :disabled="!levelLoaded" @click="resetLevel">Reset!</button> -->
-        <!-- <button style="button" @click="debugEnabled = !debugEnabled">Toggle Debug</button> -->
-        <!--<button style="button" @click="testFn">GEN LEVEL</button>-->
-        
         <button style="button" :disabled="!activeConnections.W" @click="move('W')"><</button>
         <button style="button" :disabled="!activeConnections.N" @click="move('N')">^</button>
         <button style="button" :disabled="!activeConnections.S" @click="move('S')">v</button>
@@ -258,7 +217,5 @@ export default defineComponent({
         <button style="button" :hidden="!debugEnabled" @click="debugStates.showConnectionStates = !debugStates.showConnectionStates">{{ (debugStates.showConnectionStates) ? "Hide" : "Show" }} Con States</button>
         <button style="button" :hidden="!debugEnabled" @click="debugStates.showConnectionIDs = !debugStates.showConnectionIDs">{{ (debugStates.showConnectionIDs) ? "Hide" : "Show" }} Con IDs</button>
         <button style="button" :hidden="!debugEnabled" @click="debugStates.showCellPathing = !debugStates.showCellPathing">{{ (debugStates.showCellPathing) ? "Hide" : "Show" }} Cell Pathing</button>
-        <!--<button style="button" :hidden="!debugEnabled" @click="">{{ (debugStates.showCellIDs) ? "Hide" : "Show" }}</button>-->
-
     </div>
 </template>
