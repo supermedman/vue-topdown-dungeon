@@ -66,10 +66,24 @@ button:focus-visible {
 canvas {
   border: 1px solid black;
 }
+
+/* Level Container */
 div#canvas-holder {
+  display: flex;
   min-width: 400px;
   min-height: 400px;
+  justify-content: space-around;
 }
+/* Shown in place of Level before generation */
+#level-gen-options {
+  display: flex;
+  width: fit-content;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  /* place-items: column space-between; */
+}
+
 
 /* Main Menu */
 /* .home-button {
@@ -95,12 +109,6 @@ div.left-map-ui, div.right-map-ui {
   justify-content: flex-start;
 }
 
-#level-gen-options {
-  display: flex;
-  width: fit-content;
-  flex-wrap: wrap;
-  place-items: column space-between;
-}
 
 .card {
   padding: 2em;

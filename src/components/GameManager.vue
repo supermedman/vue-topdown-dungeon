@@ -2,12 +2,15 @@
 import { defineComponent } from 'vue';
 
 import MapDisplay from './MapDisplay.vue';
+import MapMakerControl from './MapMakerControl.vue';
+
 
 import level_one from '../levels/level1.json';
 
 import { createLevel, loadLevel, MakerMap, simplifiedLevelGenTest } from '../utils/LevelFactory';
 
 import { TileData, MapTile, CellData, CellManager } from '../typing/Tiles'; // 
+
 
 const emptyTile = new MapTile({ id: 0, connections: [["", 0]]});
 const emptyCell = new CellData({ id: 0, connections: [["", 0]]});
@@ -21,6 +24,7 @@ type ActiveCon = {
 
 /** TODO CELLS + UI
  *  - Add Level Generation Options UI
+ *      - Add More options / Ideas for options
  *  - Add "Interaction" component handlers for cells with contents
  *  - Add content flow for each type of content "Interaction"
  *      - Enemy
@@ -31,7 +35,8 @@ type ActiveCon = {
 export default defineComponent({
     emits: ['changePage'],
     components: {
-        MapDisplay
+        MapDisplay,
+        MapMakerControl
     },
     data() {
         return {
@@ -48,7 +53,7 @@ export default defineComponent({
                 W: false
             },
             mapMakerContainer: {
-                dimensions: 8,
+                dimPicked: 8,
                 /* 
                     TODO: add additional user options for how a level will attempt 
                     to generate
@@ -102,6 +107,10 @@ export default defineComponent({
         });
     },
     methods: {
+        updateMapOptions(payload: number){
+            // console.log('Event Recieved from radio check box:', payload);
+            this.mapMakerContainer.dimPicked = payload;
+        },
         loadLevel(dimArgs: number){
             if (!this.levelLoaded) this.levelLoaded = true;
             else return;
@@ -192,7 +201,7 @@ export default defineComponent({
     </div>
     <div class="game-container">
         <div class="left-map-ui">
-            <button style="button" :disabled="levelLoaded" @click="loadLevel(mapMakerContainer.dimensions)">Start!</button>
+            <button style="button" :disabled="levelLoaded" @click="loadLevel(mapMakerContainer.dimPicked)">Start!</button>
             <button style="button" :disabled="!levelLoaded" @click="resetLevel">Reset!</button>
         </div>
         <div id="canvas-holder">
@@ -207,32 +216,10 @@ export default defineComponent({
             :de-con-states="debugStates.showConnectionStates"
             :de-cell-pathing="debugStates.showCellPathing"
             ></MapDisplay>
-            <div id="level-gen-options">
-                <div :hidden="levelLoaded">
-                    <input type="radio" id="dimOne" name="dimOption" :value="8" checked
-                    v-model.number="mapMakerContainer.dimensions"
-                    />
-                    <label for="dimOne">8x8</label>
-                </div>
-                <div :hidden="levelLoaded">
-                    <input type="radio" id="dimTwo" name="dimOption" :value="10" 
-                    v-model.number="mapMakerContainer.dimensions"
-                    />
-                    <label for="dimTwo">10x10</label>
-                </div>
-                <div :hidden="levelLoaded">
-                    <input type="radio" id="dimThree" name="dimOption" :value="12" 
-                    v-model.number="mapMakerContainer.dimensions"
-                    />
-                    <label for="dimThree">12x12</label>
-                </div>
-                <div :hidden="levelLoaded">
-                    <input type="radio" id="dimFour" name="dimOption" :value="16" 
-                    v-model.number="mapMakerContainer.dimensions"
-                    />
-                    <label for="dimFour">16x16</label>
-                </div>
-            </div>
+            <MapMakerControl 
+            :level-active="levelLoaded"
+            @update-dimension="updateMapOptions($event)"
+            ></MapMakerControl>
         </div>
         <div class="right-map-ui">
             <button style="button" @click="debugEnabled = !debugEnabled">Toggle Debug</button>
