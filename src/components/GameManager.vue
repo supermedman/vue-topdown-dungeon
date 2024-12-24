@@ -74,6 +74,7 @@ export default defineComponent({
             if (!this.levelLoaded) return;
             let keySwitch = e.key;
 
+            // Group wasd and arrow keys to single direction pointer
             if (['ArrowUp', 'w'].includes(keySwitch)) {
                 e.preventDefault();
                 keySwitch = 'ArrowUp';
@@ -90,6 +91,7 @@ export default defineComponent({
 
             switch (keySwitch) {
                 case 'ArrowUp':
+                    // Catch invalid direction movement, this prevents an uneeded canvas render
                     if (!this.activeConnections.N) break;
                     this.move('N');
                 break;
