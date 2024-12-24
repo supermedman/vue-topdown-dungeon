@@ -33,15 +33,18 @@ body {
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
+h1, h2, h3, h4, h5 {
   line-height: 1.1;
   border: 1px solid rgba(204, 21, 8, 0.863);
   border-radius: 5px;
   background-color: black;
   color: azure;
-  padding: 0 3px;
+  padding: 0.4em 1.1em;
+  margin: 0;
   width: fit-content;
+}
+h1 {
+  font-size: 3.2em;
 }
 
 button {
@@ -75,15 +78,96 @@ div#canvas-holder {
   justify-content: space-around;
 }
 /* Shown in place of Level before generation */
-#level-gen-options {
+#level-gen-container {
   display: flex;
   width: fit-content;
+  flex-wrap: wrap;
+  flex-direction: column;
+  justify-content: center;
+  /* align-content: center; */
+  align-items: center;
+}
+
+/* .level-gen-header {
+  padding: 0.2em;
+  margin: 0;
+  border: 1px solid red;
+} */
+
+.level-gen-options {
+  display: flex;
+  width: fit-content;
+  height: fit-content;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   /* place-items: column space-between; */
 }
+.level-gen-options label {
+  border: 1px dashed black;
+  background-color: #1a1a1a;
+  border-radius: 15%;
+  padding: 0.6em 0.6em 0.6em 25px;
+  cursor: pointer;
+}
+.level-gen-options label:hover {
+  border-color: rgba(204, 21, 8, 0.863);
+}
+.level-gen-options label:focus,
+.level-gen-options label:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
 
+/* Custom Radio Selector Display */
+.option-label-container {
+  /* display: inherit; */
+  position: relative;
+  cursor: pointer;
+}
+
+.option-label-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Creating the custom "check box" */
+.option-selector {
+  position: absolute;
+  top: 0.7em;
+  left: 1px;
+  height: 20px;
+  width: 20px;
+  background-color: #1f1f1f;
+  border-radius: 50%;
+}
+
+.option-label-container:hover input ~ .option-selector {
+  background-color: black;
+}
+
+.option-label-container input:checked ~ .option-selector {
+  background-color: rgba(204, 21, 8, 0.863);
+}
+
+.option-selector:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.option-label-container input:checked ~ .option-selector:after {
+  display: block;
+}
+
+.option-label-container .option-selector:after {
+  top: 6px;
+	left: 6px;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: white;
+}
 
 /* Main Menu */
 /* .home-button {
