@@ -90,19 +90,23 @@ export default defineComponent({
 
             switch (keySwitch) {
                 case 'ArrowUp':
+                    if (!this.activeConnections.N) break;
                     this.move('N');
-                    break;
+                break;
                 case 'ArrowRight':
+                    if (!this.activeConnections.E) break;
                     this.move('E');
-                    break;
+                break;
                 case 'ArrowDown':
+                    if (!this.activeConnections.S) break;
                     this.move('S');
-                    break;
+                break;
                 case 'ArrowLeft':
+                    if (!this.activeConnections.W) break;
                     this.move('W');
-                    break;
+                break;
                 default:
-                    break;
+                break;
             }
         });
     },
